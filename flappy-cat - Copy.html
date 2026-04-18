@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Flappy Cat</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #4facfe, #6a11cb);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: #ffffff;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+        }
+
+        .hint {
+            margin-bottom: 12px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        canvas {
+            background: linear-gradient(#8be9fd, #50fa7b);
+            border-radius: 12px;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+        }
+
+        .back-link {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #fffa65;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Flappy Cat</h1>
+    <div class="hint">Space / click / tap to flap. Collect coins, avoid pipes.</div>
+    <canvas id="game" width="400" height="600"></canvas>
+    <a href="index.html" class="back-link">⬅ Back to main page</a>
+
+    <script>
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+
+        // Default physics settings for Flappy Cat
+        const DEFAULT_GRAVITY = 0.25;
+        const DEFAULT_FLAP_STRENGTH = -7;
+
+        let gravity = DEFAULT_GRAVITY;
+        let flapStrength = DEFAULT_FLAP_STRENGTH;
+        const PIPE_WIDTH = 70;
+        const PIPE_GAP = 180;
+        const PIPE_SPEED = 2.3;
+        const PIPE_INTERVAL = 1800; // ms
+
+        const CAT_SIZE = 36;
+
+        const SKINS = [
+            { name: "Default", unlockAt: 0, bodyColor: "#ffb86c", earColor: "#ff9f43" },
+            { name: "Dog", unlockAt: 3, bodyColor: "#c79f6a", earColor: "#8b5a2b" },
+            { name: "Gold", unlockAt: 5, bodyColor: "#ffd700", earColor: "#ffe066" },
+            { name: "Shadow", unlockAt: 10, bodyColor: "#555555", earColor: "#888888" },
+            { name: "Gimate", unlockAt: 4, bodyColor: "#6a11cb", earColor: "#4facfe" }
+        ];
+
+        function getSkinIndexByName(name) {
+            return SKINS.findIndex((s) => s.name === name);
+        }
+
+        function saveProgress() {
+            try {
+                const data = {
+                    best,
+                    selectedSkinIndex
+                };
+                sessionStorage.setItem("flappyCatProgress", JSON.stringify(data));
+            } catch (e) {
+                // ignore storage errors
+            }
+        }
+
+        function loadProgress() {
+            try {
+                const raw = sessionStorage.getItem("flappyCatProgress");
+                if (!raw) return;
+                const data = JSON.parse(raw);
+                if (typeof data.best === "number") {
+                    best = data.best;
+                }
+                if (
+                    typeof data.selectedSkinIndex === "number" &&
+                    data.selectedSkinIndex >= 0 &&
+                    data.selectedSkinIndex < SKINS.length
+                ) {
+                    selectedSkinIndex = data.selectedSkinIndex;
+                }
+            } catch (e) {
+                // ignore parse/storage errors
+            }
+        }
+
+        function updateBest(newScore) {
+            if (newScore > best) {
+                best = newScore;
+                saveProgress();
+            }
+        }
+
+        let selectedSkinIndex = 0;
+
+        let cat = {
+            x: 80,
+            y: canvas.height / 2,
+            vy: 0,
+            angle: 0
+        };
+
+        let pipes = [];
+        let coins = [];
+        let lastPipeTime = 0;
+        let score = 0;
+        let best = 0;
+        let gameOver = false;
+        let gameStarted = false; // show menu before first start
+        let inCustomizeMenu = false; // secondary menu for skins
+        let isPaused = false;
+        let isCountingDown = false;
+        let countdownEndTimeMs = 0;
+
+        loadProgress();
+
+        function resetGame() {
+            cat.y = canvas.height / 2;
+            cat.vy = 0;
+            cat.angle = 0;
+            pipes = [];
+            coins = [];
+            lastPipeTime = 0;
+            score = 0;
+            gameOver = false;
+        }
+
+        function spawnPipe() {
+            const margin = 60;
+            const gapY = margin + Math.random() * (canvas.height - 2 * margin - PIPE_GAP);
+
+            const pipe = {
+                x: canvas.width,
+                gapY
+            };
+
+            const coin = {
+                x: pipe.x + PIPE_WIDTH / 2,
+                y: gapY + PIPE_GAP / 2,
+                r: 10,
+                collected: false
+            };
+
+            pipes.push(pipe);
+            coins.push(coin);
+        }
+
+        function flap() {
+            // First input starts the game from the menu
+            if (!gameStarted && !gameOver) {
+                gameStarted = true;
+                cat.vy = flapStrength;
+                return;
+            }
+
+            // From game over, input restarts and immediately flaps
+            if (gameOver) {
+                resetGame();
+                gameStarted = true;
+                cat.vy = flapStrength;
+                return;
+            }
+
+            // Normal flap while playing
+            cat.vy = flapStrength;
+        }
+
+        function update(delta, timestamp) {
+            if (!gameStarted || gameOver) return;
+
+            if (isPaused) return;
+
+            if (isCountingDown) {
+                if (performance.now() >= countdownEndTimeMs) {
+                    isCountingDown = false;
+                } else {
+                    return;
+                }
+            }
+
+            // Cat physics
+            cat.vy += gravity;
+            cat.y += cat.vy;
+            cat.angle += 0.2; // spin
+
+            // Spawn pipes
+            if (timestamp - lastPipeTime > PIPE_INTERVAL) {
+                spawnPipe();
+                lastPipeTime = timestamp;
+            }
+
+            // Move pipes & coins
+            pipes.forEach(p => p.x -= PIPE_SPEED);
+            coins.forEach(c => c.x -= PIPE_SPEED);
+
+            // Remove off-screen
+            pipes = pipes.filter(p => p.x + PIPE_WIDTH > -50);
+            coins = coins.filter(c => c.x + c.r > -50 && !c.collected);
+
+            // Collisions: ground / ceiling
+            if (cat.y + CAT_SIZE / 2 >= canvas.height || cat.y - CAT_SIZE / 2 <= 0) {
+                endGame();
+                return;
+            }
+
+            // Collisions: pipes
+            for (let p of pipes) {
+                const topPipeBottom = p.gapY;
+                const bottomPipeTop = p.gapY + PIPE_GAP;
+
+                const catLeft = cat.x - CAT_SIZE / 2;
+                const catRight = cat.x + CAT_SIZE / 2;
+                const pipeLeft = p.x;
+                const pipeRight = p.x + PIPE_WIDTH;
+
+                const inPipeX = catRight > pipeLeft && catLeft < pipeRight;
+                const hitTop = cat.y - CAT_SIZE / 2 < topPipeBottom;
+                const hitBottom = cat.y + CAT_SIZE / 2 > bottomPipeTop;
+
+                if (inPipeX && (hitTop || hitBottom)) {
+                    endGame();
+                    return;
+                }
+            }
+
+            // Collisions: coins (circle vs cat box)
+            coins.forEach(c => {
+                if (c.collected) return;
+                const closestX = Math.max(cat.x - CAT_SIZE / 2, Math.min(c.x, cat.x + CAT_SIZE / 2));
+                const closestY = Math.max(cat.y - CAT_SIZE / 2, Math.min(c.y, cat.y + CAT_SIZE / 2));
+                const dx = c.x - closestX;
+                const dy = c.y - closestY;
+                const distSq = dx * dx + dy * dy;
+                if (distSq <= c.r * c.r) {
+                    c.collected = true;
+                    score++;
+                    updateBest(score);
+                }
+            });
+        }
+
+        function endGame() {
+            gameOver = true;
+        }
+
+        function drawBackground() {
+            // Simple ground line
+            ctx.fillStyle = "#282a36";
+            ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
+        }
+
+        function drawPipesAndCoins() {
+            pipes.forEach((p, index) => {
+                const gapY = p.gapY;
+
+                // Top pipe
+                ctx.fillStyle = "#228B22";
+                ctx.fillRect(p.x, 0, PIPE_WIDTH, gapY);
+
+                // Bottom pipe
+                ctx.fillRect(p.x, gapY + PIPE_GAP, PIPE_WIDTH, canvas.height - (gapY + PIPE_GAP));
+
+                // Coin at every pole (paired with this pipe index)
+                const c = coins[index];
+                if (c && !c.collected) {
+                    const gradient = ctx.createRadialGradient(c.x - 3, c.y - 3, 2, c.x, c.y, c.r);
+                    gradient.addColorStop(0, "#ffffff");
+                    gradient.addColorStop(0.3, "#fffa65");
+                    gradient.addColorStop(1, "#fbc531");
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Coin shine line
+                    ctx.strokeStyle = "rgba(255,255,255,0.8)";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(c.x - 3, c.y - 3);
+                    ctx.lineTo(c.x + 3, c.y + 3);
+                    ctx.stroke();
+                }
+            });
+        }
+
+        function drawCat() {
+            ctx.save();
+            ctx.translate(cat.x, cat.y);
+            ctx.rotate(cat.angle);
+
+            const skin = SKINS[selectedSkinIndex] || SKINS[0];
+
+            // Body
+            ctx.fillStyle = skin.bodyColor;
+            ctx.fillRect(-CAT_SIZE / 2, -CAT_SIZE / 2, CAT_SIZE, CAT_SIZE);
+
+            // Ears
+            ctx.fillStyle = skin.earColor;
+            ctx.beginPath();
+            ctx.moveTo(-CAT_SIZE / 2 + 4, -CAT_SIZE / 2);
+            ctx.lineTo(-CAT_SIZE / 2 + 10, -CAT_SIZE / 2 - 8);
+            ctx.lineTo(-CAT_SIZE / 2 + 16, -CAT_SIZE / 2);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(CAT_SIZE / 2 - 4, -CAT_SIZE / 2);
+            ctx.lineTo(CAT_SIZE / 2 - 10, -CAT_SIZE / 2 - 8);
+            ctx.lineTo(CAT_SIZE / 2 - 16, -CAT_SIZE / 2);
+            ctx.closePath();
+            ctx.fill();
+
+            // Eyes looking at you
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(-8, -4, 7, 7);
+            ctx.fillRect(1, -4, 7, 7);
+
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(-5, -2, 3, 3);
+            ctx.fillRect(3, -2, 3, 3);
+
+            // Nose
+            ctx.fillStyle = "#ff6b6b";
+            ctx.fillRect(-2, 2, 4, 3);
+
+            ctx.restore();
+        }
+
+        function isWithinStartButton(x, y) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2 - 20; // "Start" text Y
+            const width = 180;
+            const height = 32;
+            return (
+                x > centerX - width / 2 &&
+                x < centerX + width / 2 &&
+                y > centerY - height / 2 &&
+                y < centerY + height / 2
+            );
+        }
+
+        function isWithinCustomizeButton(x, y) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2 + 20; // "Customize" text Y
+            const width = 180;
+            const height = 32;
+            return (
+                x > centerX - width / 2 &&
+                x < centerX + width / 2 &&
+                y > centerY - height / 2 &&
+                y < centerY + height / 2
+            );
+        }
+
+        function isWithinLeaveButton(x, y) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2 + 60; // "Leave" text Y
+            const width = 180;
+            const height = 32;
+            return (
+                x > centerX - width / 2 &&
+                x < centerX + width / 2 &&
+                y > centerY - height / 2 &&
+                y < centerY + height / 2
+            );
+        }
+
+        function getCustomizeMenuChoice(x, y) {
+            const centerX = canvas.width / 2;
+            const btnWidth = 220;
+            const btnHeight = 32;
+
+            const catY = canvas.height / 2 - 20;
+            const dogY = canvas.height / 2 + 20;
+            const gimateY = canvas.height / 2 + 60;
+            const backY = canvas.height / 2 + 100;
+
+            function hit(testY) {
+                return (
+                    x > centerX - btnWidth / 2 &&
+                    x < centerX + btnWidth / 2 &&
+                    y > testY - btnHeight / 2 &&
+                    y < testY + btnHeight / 2
+                );
+            }
+
+            if (hit(catY)) return "cat";
+            if (hit(dogY)) return "dog";
+            if (hit(gimateY)) return "gimate";
+            if (hit(backY)) return "back";
+
+            // Arrow in top-right of customize menu also acts as back
+            const overlayTop = canvas.height / 2 - 110;
+            const overlayRight = canvas.width - 40;
+            const arrowWidth = 40;
+            const arrowHeight = 30;
+            if (
+                x > overlayRight - arrowWidth &&
+                x < overlayRight &&
+                y > overlayTop + 10 &&
+                y < overlayTop + 10 + arrowHeight
+            ) {
+                return "back";
+            }
+            return null;
+        }
+
+        function drawHUD() {
+            // Start / customize menu before the first game starts
+            if (!gameStarted && !gameOver) {
+                if (inCustomizeMenu) {
+                    // Customize menu: choose between Cat, Dog, Gimate
+                    ctx.fillStyle = "rgba(0,0,0,0.7)";
+                    ctx.fillRect(40, canvas.height / 2 - 110, canvas.width - 80, 220);
+
+                    const centerX = canvas.width / 2;
+                    ctx.fillStyle = "#ffffff";
+                    ctx.textAlign = "center";
+                    ctx.font = "24px system-ui, sans-serif";
+                    ctx.fillText("Choose Skin", centerX, canvas.height / 2 - 70);
+
+                    const btnWidth = 220;
+                    const btnHeight = 32;
+
+                    const catY = canvas.height / 2 - 20;
+                    const dogY = canvas.height / 2 + 20;
+                    const gimateY = canvas.height / 2 + 60;
+                    const backY = canvas.height / 2 + 100;
+
+                    ctx.lineWidth = 2;
+
+                    function drawSkinButton(label, skinName, y) {
+                        const skinIndex = getSkinIndexByName(skinName);
+                        const skin = SKINS[skinIndex];
+                        const unlocked = best >= skin.unlockAt;
+
+                        ctx.strokeStyle = unlocked ? "#00ff00" : "#555555";
+                        ctx.strokeRect(centerX - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight);
+
+                        ctx.font = "18px system-ui, sans-serif";
+                        let text = label;
+                        if (!unlocked) {
+                            text += " (locked " + skin.unlockAt + "+)";
+                        }
+                        ctx.fillText(text, centerX, y + 5);
+                    }
+
+                    drawSkinButton("Cat", "Default", catY);
+                    drawSkinButton("Dog", "Dog", dogY);
+                    drawSkinButton("Gimate", "Gimate", gimateY);
+
+                    // Back button
+                    ctx.strokeStyle = "#00ff00";
+                    ctx.strokeRect(centerX - btnWidth / 2, backY - btnHeight / 2, btnWidth, btnHeight);
+                    ctx.font = "18px system-ui, sans-serif";
+                    ctx.fillText("Back", centerX, backY + 5);
+
+                    // Top-right arrow to go back to main menu
+                    const overlayTop = canvas.height / 2 - 110;
+                    const overlayRight = canvas.width - 40;
+                    const arrowWidth = 40;
+                    const arrowHeight = 30;
+                    ctx.strokeStyle = "#00ff00";
+                    ctx.strokeRect(overlayRight - arrowWidth, overlayTop + 10, arrowWidth, arrowHeight);
+                    ctx.font = "20px system-ui, sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.fillText("→", overlayRight - arrowWidth / 2, overlayTop + 10 + arrowHeight / 2 + 6);
+
+                    ctx.font = "14px system-ui, sans-serif";
+                    const currentSkin = SKINS[selectedSkinIndex] || SKINS[0];
+                    ctx.fillText("Current: " + currentSkin.name + " (Best: " + best + ")", centerX, canvas.height / 2 - 40);
+
+                    return;
+                }
+
+                // Main menu
+                ctx.fillStyle = "rgba(0,0,0,0.6)";
+                ctx.fillRect(40, canvas.height / 2 - 100, canvas.width - 80, 200);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.textAlign = "center";
+                ctx.font = "28px system-ui, sans-serif";
+                ctx.fillText("Flappy Cat", canvas.width / 2, canvas.height / 2 - 55);
+
+                // Green bordered buttons for Start / Customize / Leave
+                const btnWidth = 180;
+                const btnHeight = 32;
+                const centerX = canvas.width / 2;
+
+                const startY = canvas.height / 2 - 20;
+                const customizeY = canvas.height / 2 + 20;
+                const leaveY = canvas.height / 2 + 60;
+
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#00ff00";
+
+                ctx.strokeRect(centerX - btnWidth / 2, startY - btnHeight / 2, btnWidth, btnHeight);
+                ctx.strokeRect(centerX - btnWidth / 2, customizeY - btnHeight / 2, btnWidth, btnHeight);
+                ctx.strokeRect(centerX - btnWidth / 2, leaveY - btnHeight / 2, btnWidth, btnHeight);
+
+                ctx.font = "18px system-ui, sans-serif";
+                ctx.fillText("Start", centerX, startY + 5);
+                ctx.fillText("Customize", centerX, customizeY + 5);
+                ctx.fillText("Leave", centerX, leaveY + 5);
+
+                const currentSkin = SKINS[selectedSkinIndex] || SKINS[0];
+                ctx.font = "14px system-ui, sans-serif";
+                ctx.fillText("Skin: " + currentSkin.name + " (Best: " + best + ")", centerX, canvas.height / 2 + 70);
+
+                ctx.font = "12px system-ui, sans-serif";
+                ctx.fillText("Unlock Dog 3+, Gold 5+, Shadow 10+, Gimate 4+", centerX, canvas.height / 2 + 90);
+                return;
+            }
+
+            ctx.fillStyle = "rgba(0,0,0,0.5)";
+            ctx.font = "20px system-ui, sans-serif";
+            ctx.textAlign = "left";
+            ctx.fillText("Coins: " + score, 12, 28);
+            ctx.fillText("Best: " + best, 12, 52);
+
+            // Countdown overlay when resuming from pause
+            if (isCountingDown) {
+                const remaining = Math.max(
+                    0,
+                    Math.ceil((countdownEndTimeMs - performance.now()) / 1000)
+                );
+                if (remaining <= 0) {
+                    // Let update() clear isCountingDown on next frame
+                } else {
+                    ctx.fillStyle = "rgba(0,0,0,0.7)";
+                    ctx.fillRect(40, canvas.height / 2 - 80, canvas.width - 80, 160);
+
+                    ctx.fillStyle = "#ffffff";
+                    ctx.textAlign = "center";
+                    ctx.font = "48px system-ui, sans-serif";
+                    ctx.fillText(String(remaining), canvas.width / 2, canvas.height / 2 + 10);
+                    return;
+                }
+            }
+
+            // Pause overlay
+            if (isPaused) {
+                ctx.fillStyle = "rgba(0,0,0,0.6)";
+                ctx.fillRect(40, canvas.height / 2 - 60, canvas.width - 80, 120);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.textAlign = "center";
+                ctx.font = "28px system-ui, sans-serif";
+                ctx.fillText("Paused", canvas.width / 2, canvas.height / 2 - 10);
+                ctx.font = "16px system-ui, sans-serif";
+                ctx.fillText("Press R to resume", canvas.width / 2, canvas.height / 2 + 24);
+                return;
+            }
+
+            if (gameOver) {
+                ctx.fillStyle = "rgba(0,0,0,0.6)";
+                ctx.fillRect(40, canvas.height / 2 - 60, canvas.width - 80, 120);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.textAlign = "center";
+                ctx.font = "28px system-ui, sans-serif";
+                ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2 - 10);
+                ctx.font = "16px system-ui, sans-serif";
+                ctx.fillText("Click / tap / press space to retry", canvas.width / 2, canvas.height / 2 + 24);
+            }
+        }
+
+        let lastTime = 0;
+        function loop(timestamp) {
+            const delta = timestamp - lastTime;
+            lastTime = timestamp;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            update(delta, timestamp);
+            drawBackground();
+            drawPipesAndCoins();
+            drawCat();
+            drawHUD();
+
+            requestAnimationFrame(loop);
+        }
+
+        // Input handlers
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "Space") {
+                e.preventDefault();
+                flap();
+            } else if (e.code === "KeyR") {
+                // Toggle pause / resume with countdown
+                if (gameStarted && !gameOver && !inCustomizeMenu) {
+                    // If currently counting down, ignore extra R presses
+                    if (isCountingDown) return;
+
+                    if (!isPaused) {
+                        isPaused = true;
+                    } else {
+                        isPaused = false;
+                        isCountingDown = true;
+                        countdownEndTimeMs = performance.now() + 3000;
+                    }
+                }
+            }
+        });
+
+        window.addEventListener("mousedown", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (!gameStarted && !gameOver) {
+                if (inCustomizeMenu) {
+                    const choice = getCustomizeMenuChoice(x, y);
+                    if (choice === "cat") {
+                        const idx = getSkinIndexByName("Default");
+                        if (idx !== -1) {
+                            selectedSkinIndex = idx;
+                            saveProgress();
+                        }
+                    } else if (choice === "dog") {
+                        const idx = getSkinIndexByName("Dog");
+                        if (idx !== -1 && best >= SKINS[idx].unlockAt) {
+                            selectedSkinIndex = idx;
+                            saveProgress();
+                        }
+                    } else if (choice === "gimate") {
+                        const idx = getSkinIndexByName("Gimate");
+                        if (idx !== -1 && best >= SKINS[idx].unlockAt) {
+                            selectedSkinIndex = idx;
+                            saveProgress();
+                        }
+                    } else if (choice === "back") {
+                        inCustomizeMenu = false;
+                    }
+                } else {
+                    if (isWithinStartButton(x, y)) {
+                        flap();
+                    } else if (isWithinCustomizeButton(x, y)) {
+                        inCustomizeMenu = true;
+                    } else if (isWithinLeaveButton(x, y)) {
+                        window.location.href = "index.html";
+                    }
+                }
+            } else {
+                flap();
+            }
+        });
+
+        window.addEventListener("touchstart", (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            if (!gameStarted && !gameOver) {
+                if (inCustomizeMenu) {
+                    const choice = getCustomizeMenuChoice(x, y);
+                    if (choice === "cat") {
+                        const idx = getSkinIndexByName("Default");
+                        if (idx !== -1) {
+                            selectedSkinIndex = idx;
+                            saveProgress();
+                        }
+                    } else if (choice === "dog") {
+                        const idx = getSkinIndexByName("Dog");
+                        if (idx !== -1 && best >= SKINS[idx].unlockAt) {
+                            selectedSkinIndex = idx;
+                            saveProgress();
+                        }
+                    } else if (choice === "gimate") {
+                        const idx = getSkinIndexByName("Gimate");
+                        if (idx !== -1 && best >= SKINS[idx].unlockAt) {
+                            selectedSkinIndex = idx;
+                            saveProgress();
+                        }
+                    } else if (choice === "back") {
+                        inCustomizeMenu = false;
+                    }
+                } else {
+                    if (isWithinStartButton(x, y)) {
+                        flap();
+                    } else if (isWithinCustomizeButton(x, y)) {
+                        inCustomizeMenu = true;
+                    } else if (isWithinLeaveButton(x, y)) {
+                        window.location.href = "index.html";
+                    }
+                }
+            } else {
+                flap();
+            }
+        }, { passive: false });
+
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>
+

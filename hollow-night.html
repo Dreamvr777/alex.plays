@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hollow Night</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #05050f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            user-select: none;
+        }
+        canvas {
+            display: block;
+            border: 2px solid #111128;
+            box-shadow: 0 0 40px rgba(0,80,200,0.18);
+        }
+        #controls {
+            color: #383858;
+            font-size: 12px;
+            margin-top: 9px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        #backBtn {
+            display: inline-block;
+            margin-top: 9px;
+            padding: 6px 14px;
+            background: #05050f;
+            color: #383858;
+            text-decoration: none;
+            border: 1px solid #1a1a33;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        #backBtn:hover { color: #9090bb; border-color: #44447a; }
+    </style>
+</head>
+<body>
+    <canvas id="game" width="800" height="500"></canvas>
+    <div id="controls">
+        A / D or ← → : Move &nbsp;|&nbsp; W / Space / ↑ : Jump (double jump!) &nbsp;|&nbsp; Z / X : Slash Attack
+    </div>
+    <a href="page3.html" id="backBtn">← Back</a>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = 800, H = 500;
+
+// ─── INPUT ──────────────────────────────────────────────────────────────────
+const keys = new Set();
+const justP = new Set();
+window.addEventListener('keydown', e => {
+    if (!keys.has(e.code)) justP.add(e.code);
+    keys.add(e.code);
+    if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))
+        e.preventDefault();
+});
+window.addEventListener('keyup', e => keys.delete(e.code));
+const jp = c => justP.has(c);
+
+// ─── PLATFORMS ──────────────────────────────────────────────────────────────
+const PLATS = [
+    // Ground & Walls
+    { x:-300, y:460, w:1400, h:80  },
+    { x:-30,  y:0,   w:30,   h:600 },
+    { x:W,    y:0,   w:30,   h:600 },
+    // Level platforms
+    { x:70,   y:382, w:135,  h:14  },
+    { x:300,  y:348, w:120,  h:14  },
+    { x:510,  y:385, w:160,  h:14  },
+    { x:165,  y:290, w:108,  h:14  },
+    { x:400,  y:272, w:125,  h:14  },
+    { x:610,  y:310, w:125,  h:14  },
+    { x:50,   y:218, w:115,  h:14  },
+    { x:270,  y:202, w:105,  h:14  },
+    { x:488,  y:208, w:128,  h:14  },
+    { x:665,  y:165, w:105,  h:14  },
+    { x:148,  y:155, w:118,  h:14  },
+    { x:356,  y:138, w:115,  h:14  },
+    { x:560,  y:115, w:110,  h:14  },
+    { x:228,  y:95,  w:108,  h:14  },
+    { x:428,  y:72,  w:120,  h:14  },
+];
+
+// ─── ENEMY FACTORY ──────────────────────────────────────────────────────────
+function mkE(x, y, pl, pr, hp=2) {
+    return { x, y, w:28, h:24, vx:0, vy:0, dir:1, spd:1.3,
+             hp, maxHp:hp, pl, pr,
+             onGround:false, hitTimer:0, dead:false, dieTimer:0 };
+}
+function initEnemies() {
+    return [
+        mkE(110,430,  5, 195, 2),
+        mkE(545,430,525, 665, 2),
+        mkE(318,318,300, 420, 2),
+        mkE(178,260,165, 273, 2),
+        mkE(425,242,400, 525, 2),
+        mkE(620,280,610, 730, 2),
+        mkE(280,172,270, 375, 2),
+        mkE(500,178,488, 616, 2),
+        mkE(160,125,148, 266, 2),
+        mkE(370,108,356, 471, 3),
+        mkE(575, 85,560, 670, 3),
+        mkE(240, 65,228, 336, 3),
+    ];
+}
+let enemies = initEnemies();
+
+// ─── PARTICLES ──────────────────────────────────────────────────────────────
+let parts = [];
+function addP(x, y, col, n=9, spd=4) {
+    for (let i=0;i<n;i++) {
+        const a = Math.random()*Math.PI*2, s = .8+Math.random()*spd;
+        parts.push({ x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s-1.5,
+                     life:1, dec:.035+Math.random()*.04,
+                     r:2+Math.random()*3, col });
+    }
+}
+// Ambient dust
+let dust = Array.from({length:45}, ()=>({
+    x:Math.random()*W, y:Math.random()*H,
+    vx:(Math.random()-.5)*.28, vy:-.18-Math.random()*.28,
+    r:.8+Math.random()*1.5, a:.04+Math.random()*.18
+}));
+
+// ─── PLAYER ─────────────────────────────────────────────────────────────────
+function initPlayer() {
+    return { x:88, y:400, w:22, h:34, vx:0, vy:0,
+             onGround:false, jumpsLeft:2, dir:1,
+             atk:false, atkT:0, atkCd:0,
+             hp:5, maxHp:5, inv:0, dead:false, respT:0 };
+}
+let pl = initPlayer();
+
+// ─── COLLISION ──────────────────────────────────────────────────────────────
+const ov = (a,b) => a.x<b.x+b.w && a.x+a.w>b.x && a.y<b.y+b.h && a.y+a.h>b.y;
+
+function resolve(e) {
+    // Horizontal
+    e.x += e.vx;
+    for (const p of PLATS) {
+        if (ov(e,p)) {
+            e.x = e.vx>0 ? p.x-e.w : p.x+p.w;
+            e.vx = 0;
+        }
+    }
+    // Vertical
+    e.y += e.vy;
+    e.onGround = false;
+    for (const p of PLATS) {
+        if (ov(e,p)) {
+            if (e.vy >= 0) { e.y = p.y-e.h; e.vy=0; e.onGround=true; }
+            else           { e.y = p.y+p.h;  e.vy=0; }
+        }
+    }
+}
+
+// ─── WIN / GAME STATE ────────────────────────────────────────────────────────
+let won = false;
+
+// ─── UPDATE ──────────────────────────────────────────────────────────────────
+function update() {
+    // Dead / respawn
+    if (pl.dead) {
+        if (--pl.respT <= 0) {
+            pl = initPlayer(); pl.inv = 110;
+            enemies = initEnemies(); won = false;
+        }
+        justP.clear(); return;
+    }
+
+    // ── Player movement ──
+    pl.vx *= 0.76;
+    if (keys.has('ArrowLeft') || keys.has('KeyA')) { pl.vx -= 2.2; pl.dir=-1; }
+    if (keys.has('ArrowRight')|| keys.has('KeyD')) { pl.vx += 2.2; pl.dir= 1; }
+    pl.vx = Math.max(-5.2, Math.min(5.2, pl.vx));
+    if (Math.abs(pl.vx)<.12) pl.vx=0;
+
+    // Jump
+    if ((jp('Space')||jp('KeyW')||jp('ArrowUp')) && pl.jumpsLeft>0) {
+        pl.vy = pl.jumpsLeft===2 ? -13 : -10.5;
+        if (pl.jumpsLeft===1) addP(pl.x+pl.w/2, pl.y+pl.h, '#7755ff', 6, 2.5);
+        pl.jumpsLeft--;
+    }
+
+    // Attack
+    if ((jp('KeyZ')||jp('KeyX')) && pl.atkCd<=0) {
+        pl.atk=true; pl.atkT=16; pl.atkCd=28;
+    }
+    if (pl.atkT>0) { if(--pl.atkT<=0) pl.atk=false; }
+    if (pl.atkCd>0) pl.atkCd--;
+    if (pl.inv>0)   pl.inv--;
+
+    // Gravity & resolve
+    pl.vy = Math.max(pl.vy + (-1), -18);
+    resolve(pl);
+    if (pl.onGround) pl.jumpsLeft=2;
+    if (pl.y > H+60) pl.hp=0;
+
+    // ── Attack hits enemies ──
+    if (pl.atk && pl.atkT>7) {
+        const sx = pl.dir>0 ? pl.x+pl.w : pl.x-46;
+        const slash = {x:sx, y:pl.y+4, w:46, h:pl.h-8};
+        for (const e of enemies) {
+            if (!e.dead && e.hitTimer<=0 && ov(slash,e)) {
+                e.hp--; e.hitTimer=28; e.vx=pl.dir*4.5;
+                addP(e.x+e.w/2, e.y+e.h/2, '#ff6600');
+                if (e.hp<=0) {
+                    e.dead=true; e.dieTimer=35;
+                    addP(e.x+e.w/2, e.y+e.h/2, '#ff4400', 18, 5);
+                }
+            }
+        }
+    }
+
+    // ── Enemies hit player ──
+    if (pl.inv<=0) {
+        for (const e of enemies) {
+            if (!e.dead && ov(pl,e)) {
+                pl.hp--; pl.inv=85;
+                const kd = pl.x<e.x+e.w/2 ? -1 : 1;
+                pl.vx=kd*6.5; pl.vy=-7.5;
+                addP(pl.x+pl.w/2, pl.y+pl.h/2, '#dd0000', 8);
+                if (pl.hp<=0) {
+                    pl.dead=true; pl.respT=135;
+                    addP(pl.x+pl.w/2, pl.y+pl.h/2, '#ccccff', 22, 5);
+                }
+                break;
+            }
+        }
+    }
+
+    // ── Enemies update ──
+    for (const e of enemies) {
+        if (e.dead) { if(e.dieTimer>0) e.dieTimer--; continue; }
+        if (e.hitTimer>0) { e.hitTimer--; e.vx*=.8; }
+        else e.vx = e.spd*e.dir;
+
+        e.vy = Math.max(e.vy + (-1), -18);
+        resolve(e);
+
+        if (e.onGround) {
+            if (e.x <= e.pl)        e.dir= 1;
+            if (e.x+e.w >= e.pr)    e.dir=-1;
+        }
+    }
+
+    // ── Particles ──
+    for (let i=parts.length-1;i>=0;i--) {
+        const p=parts[i];
+        p.x+=p.vx; p.y+=p.vy; p.vy+=.12; p.life-=p.dec;
+        if(p.life<=0) parts.splice(i,1);
+    }
+    for (const d of dust) {
+        d.x+=d.vx; d.y+=d.vy;
+        if(d.y<-4) { d.y=H+4; d.x=Math.random()*W; }
+        if(d.x<-4) d.x=W+4; if(d.x>W+4) d.x=-4;
+    }
+
+    // Win check
+    if (!won && enemies.every(e=>e.dead)) won=true;
+
+    justP.clear();
+}
+
+// ─── DRAW ────────────────────────────────────────────────────────────────────
+function drawBg() {
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'#020209'); g.addColorStop(1,'#05051a');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    // Cave arches bg
+    ctx.strokeStyle='rgba(18,18,48,.55)'; ctx.lineWidth=1;
+    for(let i=0;i<7;i++) {
+        ctx.beginPath(); ctx.arc(115*i+55, H+10, 65+i*12, Math.PI,0); ctx.stroke();
+    }
+    // Stalactites
+    ctx.fillStyle='rgba(10,10,30,.9)';
+    const sH = [28,16,35,22,30,18,26,32,14,20,36,24,28,15,31];
+    for(let i=0;i<15;i++) ctx.fillRect(i*56-2, 0, 16, sH[i]);
+}
+
+function drawPlat(p) {
+    ctx.fillStyle='#0e0e1e'; ctx.fillRect(p.x,p.y,p.w,p.h);
+    ctx.strokeStyle='rgba(55,55,115,.7)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(p.x,p.y+1); ctx.lineTo(p.x+p.w,p.y+1); ctx.stroke();
+    // subtle moss-like bottom
+    ctx.strokeStyle='rgba(30,30,60,.3)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(p.x,p.y+p.h-1); ctx.lineTo(p.x+p.w,p.y+p.h-1); ctx.stroke();
+}
+
+function drawEnemy(e) {
+    const a = e.dead ? e.dieTimer/35 : 1;
+    ctx.globalAlpha=a;
+    const fl = e.hitTimer>0 && Math.floor(e.hitTimer/4)%2===0;
+
+    // Shell / carapace
+    ctx.fillStyle = fl?'#fff':'#6e1100';
+    ctx.fillRect(e.x, e.y+5, e.w, 10);
+
+    // Body
+    ctx.fillStyle = fl?'#fff':'#aa2200';
+    ctx.fillRect(e.x+3, e.y+12, e.w-6, e.h-12);
+
+    // Head
+    const hx = e.dir>0 ? e.x+e.w-11 : e.x;
+    ctx.fillStyle = fl?'#fff':'#cc3300';
+    ctx.fillRect(hx, e.y+2, 11, 13);
+
+    // Glowing eye
+    if (!fl) { ctx.shadowColor='#ff8800'; ctx.shadowBlur=6; }
+    ctx.fillStyle='#ffaa00';
+    ctx.fillRect(hx+(e.dir>0?5:3), e.y+5, 4, 4);
+    ctx.shadowBlur=0;
+
+    // Legs
+    const lg = Math.floor(Date.now()/110)%2===0 ? 2:-1;
+    ctx.fillStyle=fl?'#fff':'#771100';
+    ctx.fillRect(e.x+2, e.y+e.h-4+lg, 7, 4);
+    ctx.fillRect(e.x+e.w-9, e.y+e.h-4-lg, 7, 4);
+
+    // HP dots
+    if (!e.dead) {
+        for(let i=0;i<e.maxHp;i++) {
+            ctx.fillStyle = i<e.hp ? '#ee3300':'#2a0000';
+            ctx.shadowColor = i<e.hp ? '#ff4400':'transparent';
+            ctx.shadowBlur  = i<e.hp ? 6:0;
+            ctx.beginPath(); ctx.arc(e.x+6+i*11, e.y-7, 4,0,Math.PI*2); ctx.fill();
+        }
+        ctx.shadowBlur=0;
+    }
+    ctx.globalAlpha=1;
+}
+
+function drawPlayer() {
+    if (pl.dead) return;
+    if (pl.inv>0 && Math.floor(pl.inv/5)%2===1) return;
+    const cx = pl.x+pl.w/2;
+
+    // Cape (behind body)
+    ctx.fillStyle='#180638';
+    if (pl.dir>0) ctx.fillRect(pl.x-7, pl.y+10, 14, pl.h-9);
+    else          ctx.fillRect(pl.x+pl.w-7, pl.y+10, 14, pl.h-9);
+
+    // Body
+    ctx.fillStyle='#d8dce8';
+    ctx.fillRect(pl.x+4, pl.y+13, pl.w-8, pl.h-13);
+
+    // Head
+    ctx.fillStyle='#dde0ed';
+    ctx.fillRect(pl.x+3, pl.y+1, pl.w-6, 14);
+
+    // Horn
+    ctx.fillStyle='#aaaabf';
+    ctx.fillRect(cx-2, pl.y-10, 4, 11);
+    ctx.fillRect(cx-4, pl.y-10, 3, 5);   // little side nub
+
+    // Eyes glow
+    ctx.fillStyle='#00eedd';
+    ctx.shadowColor='#00eedd'; ctx.shadowBlur=10;
+    if (pl.dir>0) ctx.fillRect(pl.x+pl.w-10, pl.y+4, 5, 4);
+    else          ctx.fillRect(pl.x+5,        pl.y+4, 5, 4);
+    ctx.shadowBlur=0;
+
+    // Cloak bottom
+    ctx.fillStyle='#22084a';
+    ctx.fillRect(pl.x+1, pl.y+pl.h-9, pl.w-2, 9);
+
+    // Nail (sword) idle
+    if (!pl.atk) {
+        ctx.fillStyle='#8899bb';
+        if (pl.dir>0) ctx.fillRect(pl.x+pl.w-1, pl.y+14, 14, 4);
+        else           ctx.fillRect(pl.x-13,    pl.y+14, 14, 4);
+    }
+
+    // Attack slash arc
+    if (pl.atk && pl.atkT>4) {
+        ctx.save();
+        ctx.globalAlpha = pl.atkT/16;
+        ctx.strokeStyle='#ffffff'; ctx.lineWidth=3.5;
+        ctx.shadowColor='#00ffee'; ctx.shadowBlur=18;
+        ctx.beginPath();
+        if (pl.dir>0) {
+            ctx.moveTo(pl.x+pl.w, pl.y+6);
+            ctx.lineTo(pl.x+pl.w+48, pl.y+pl.h/2);
+            ctx.lineTo(pl.x+pl.w, pl.y+pl.h-6);
+        } else {
+            ctx.moveTo(pl.x, pl.y+6);
+            ctx.lineTo(pl.x-48, pl.y+pl.h/2);
+            ctx.lineTo(pl.x, pl.y+pl.h-6);
+        }
+        ctx.stroke();
+        // nail line
+        ctx.lineWidth=2;
+        ctx.strokeStyle='#bbddff';
+        ctx.beginPath();
+        if(pl.dir>0) { ctx.moveTo(pl.x+pl.w, pl.y+pl.h/2); ctx.lineTo(pl.x+pl.w+44, pl.y+pl.h/2); }
+        else          { ctx.moveTo(pl.x, pl.y+pl.h/2); ctx.lineTo(pl.x-44, pl.y+pl.h/2); }
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
+function drawHUD() {
+    // Heart health
+    for (let i=0;i<pl.maxHp;i++) {
+        const full = i<pl.hp;
+        ctx.fillStyle = full?'#cc1111':'#280505';
+        ctx.shadowColor = full?'#ff3333':'transparent';
+        ctx.shadowBlur  = full?8:0;
+        const hx=15+i*24, hy=14;
+        ctx.fillRect(hx, hy+5, 14, 9);
+        ctx.beginPath(); ctx.arc(hx+4, hy+5, 5,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(hx+10, hy+5, 5,0,Math.PI*2); ctx.fill();
+    }
+    ctx.shadowBlur=0;
+
+    // Title
+    ctx.fillStyle='rgba(140,140,200,.2)';
+    ctx.font='13px Courier New';
+    ctx.textAlign='right';
+    ctx.fillText('HOLLOW NIGHT', W-14, 28);
+    ctx.textAlign='left';
+
+    // Enemies
+    const alive = enemies.filter(e=>!e.dead).length;
+    ctx.fillStyle='rgba(140,140,200,.2)';
+    ctx.font='12px Courier New';
+    ctx.fillText('Crawlers: '+alive, 14, H-14);
+
+    // Controls hint (fade in)
+    ctx.fillStyle='rgba(100,100,160,.18)';
+    ctx.font='11px Courier New';
+    ctx.textAlign='center';
+    ctx.fillText('Z/X to attack', W/2, H-14);
+    ctx.textAlign='left';
+}
+
+function drawDead() {
+    if (!pl.dead) return;
+    const a = Math.min(1,(135-pl.respT)/55);
+    ctx.fillStyle=`rgba(0,0,0,${a*.78})`; ctx.fillRect(0,0,W,H);
+    ctx.shadowColor='#660000'; ctx.shadowBlur=30;
+    ctx.fillStyle=`rgba(180,10,10,${a})`;
+    ctx.font='bold 42px Courier New';
+    ctx.textAlign='center';
+    ctx.fillText('YOU DIED', W/2, H/2);
+    ctx.shadowBlur=0;
+    ctx.fillStyle=`rgba(70,70,90,${a})`;
+    ctx.font='15px Courier New';
+    ctx.fillText('respawning...', W/2, H/2+36);
+    ctx.textAlign='left';
+}
+
+function drawWin() {
+    if (!won) return;
+    ctx.fillStyle='rgba(0,0,0,.55)'; ctx.fillRect(0,0,W,H);
+    ctx.shadowColor='#00ffcc'; ctx.shadowBlur=30;
+    ctx.fillStyle='#00ffcc';
+    ctx.font='bold 40px Courier New';
+    ctx.textAlign='center';
+    ctx.fillText('ALL CRAWLERS SLAIN', W/2, H/2);
+    ctx.shadowBlur=0;
+    ctx.fillStyle='rgba(150,220,200,.8)';
+    ctx.font='16px Courier New';
+    ctx.fillText('the hollow claims its peace', W/2, H/2+38);
+    ctx.fillStyle='rgba(100,150,130,.6)';
+    ctx.font='13px Courier New';
+    ctx.fillText('refresh to play again', W/2, H/2+66);
+    ctx.textAlign='left';
+}
+
+function draw() {
+    ctx.clearRect(0,0,W,H);
+    drawBg();
+
+    // Dust
+    for(const d of dust) {
+        ctx.fillStyle=`rgba(100,100,180,${d.a})`;
+        ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2); ctx.fill();
+    }
+
+    for(const p of PLATS) drawPlat(p);
+    for(const e of enemies) if(!e.dead||e.dieTimer>0) drawEnemy(e);
+    drawPlayer();
+
+    // Particles
+    for(const p of parts) {
+        ctx.globalAlpha=p.life;
+        ctx.fillStyle=p.col; ctx.shadowColor=p.col; ctx.shadowBlur=7;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=1; ctx.shadowBlur=0;
+
+    drawHUD();
+    drawDead();
+    drawWin();
+}
+
+// ─── LOOP ───────────────────────────────────────────────────────────────────
+(function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
