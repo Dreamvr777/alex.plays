@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>THE WOODS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { overflow: hidden; background: #000; }
+        canvas { display: block; }
+
+        /* ── START SCREEN ── */
+        #start-screen {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.92);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            z-index: 200;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        #start-screen h1 {
+            color: #ff2200;
+            font-size: 3rem;
+            text-shadow: 0 0 30px #ff2200, 0 0 60px #ff000055;
+            letter-spacing: 5px;
+            animation: flicker 3s infinite;
+        }
+        #start-screen .sub {
+            color: #550000;
+            font-size: 0.95rem;
+            letter-spacing: 3px;
+        }
+        #start-screen .controls {
+            color: #330000;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            margin-top: 8px;
+            line-height: 1.9;
+            text-align: center;
+        }
+        #start-screen .click-label {
+            color: #881100;
+            font-size: 0.85rem;
+            letter-spacing: 3px;
+            margin-top: 14px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%,100% { opacity: 1; }
+            50%      { opacity: 0.3; }
+        }
+        @keyframes flicker {
+            0%,18%,20%,22%,79%,81%,100% { opacity: 1; }
+            19%,21% { opacity: 0.1; }
+            80%     { opacity: 0.4; }
+        }
+
+        /* ── VIGNETTE ── */
+        #vignette {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.75) 100%);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* ── CROSSHAIR ── */
+        #crosshair {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            width: 18px; height: 18px;
+            pointer-events: none;
+            z-index: 20;
+            opacity: 0.45;
+        }
+        #crosshair::before, #crosshair::after {
+            content: '';
+            position: absolute;
+            background: #ff3300;
+        }
+        #crosshair::before {
+            width: 2px; height: 100%;
+            top: 0; left: 50%;
+            transform: translateX(-50%);
+        }
+        #crosshair::after {
+            width: 100%; height: 2px;
+            top: 50%; left: 0;
+            transform: translateY(-50%);
+        }
+
+        /* ── AI MESSAGE ── */
+        #ai-box {
+            position: fixed;
+            bottom: 36px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.78);
+            border: 1px solid #440000;
+            border-radius: 5px;
+            padding: 10px 22px;
+            max-width: 520px;
+            width: 90%;
+            text-align: center;
+            z-index: 20;
+            pointer-events: none;
+        }
+        #ai-tag {
+            font-family: 'Courier New', monospace;
+            font-size: 0.62rem;
+            letter-spacing: 3px;
+            color: #440000;
+            margin-bottom: 5px;
+        }
+        #ai-typed {
+            font-family: 'Courier New', monospace;
+            font-size: 0.88rem;
+            color: #ff3300;
+            text-shadow: 0 0 8px #ff000044;
+            letter-spacing: 0.5px;
+            line-height: 1.6;
+        }
+        #ai-cursor {
+            display: inline-block;
+            width: 8px; height: 0.9em;
+            background: #ff3300;
+            vertical-align: text-bottom;
+            margin-left: 2px;
+            animation: blink 0.7s step-end infinite;
+        }
+        @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+
+        /* ── HINT ── */
+        #hint {
+            position: fixed;
+            top: 18px; right: 18px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.72rem;
+            color: #2a0000;
+            letter-spacing: 1px;
+            line-height: 1.9;
+            text-align: right;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        /* ── WIN SCREEN ── */
+        #win-screen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.94);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            z-index: 300;
+            font-family: 'Courier New', monospace;
+        }
+        #win-screen h1 {
+            color: #ff2200;
+            font-size: 2.6rem;
+            text-shadow: 0 0 30px #ff2200;
+            letter-spacing: 4px;
+            animation: flicker 2s infinite;
+        }
+        #win-screen p {
+            color: #660000;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            text-align: center;
+            max-width: 420px;
+            line-height: 1.8;
+        }
+        #win-screen a {
+            margin-top: 24px;
+            color: #881100;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-decoration: none;
+            border-bottom: 1px solid #440000;
+            padding-bottom: 2px;
+        }
+        #win-screen a:hover { color: #cc2200; }
+    </style>
+</head>
+<body>
+
+    <!-- Start screen -->
+    <div id="start-screen" onclick="startGame()">
+        <h1>⚠ THE WOODS ⚠</h1>
+        <p class="sub">[ A.I. UNIT 0X — NAVIGATION PROTOCOL ACTIVE ]</p>
+        <p class="controls">
+            W / S — MOVE FORWARD / BACK<br>
+            A / D — STRAFE LEFT / RIGHT<br>
+            MOUSE — LOOK AROUND
+        </p>
+        <p class="click-label">▸ CLICK TO ENTER</p>
+    </div>
+
+    <!-- UI overlays -->
+    <div id="vignette"></div>
+    <div id="crosshair"></div>
+
+    <div id="ai-box">
+        <div id="ai-tag">▸ A.I. SPEAKING —</div>
+        <span id="ai-typed"></span><span id="ai-cursor"></span>
+    </div>
+
+    <div id="hint">
+        W — FORWARD<br>
+        S — BACK<br>
+        A — LEFT<br>
+        D — RIGHT<br>
+        MOUSE — LOOK
+    </div>
+
+    <!-- Win screen -->
+    <div id="win-screen">
+        <h1>👁️ FOUND YOU 👁️</h1>
+        <p>you walked right into it.<br>exactly as planned.<br><br>i told you not to press that button.</p>
+        <a href="ai-room.html">← escape the room</a>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+    <script>
+    // ════════════════════════════════════════════
+    //  SCENE
+    // ════════════════════════════════════════════
+    const scene    = new THREE.Scene();
+    scene.background = new THREE.Color(0x010305);
+    scene.fog        = new THREE.FogExp2(0x010305, 0.027);
+
+    const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 300);
+    camera.position.set(0, 1.7, 0);
+    camera.rotation.order = 'YXZ';
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    // ════════════════════════════════════════════
+    //  LIGHTS
+    // ════════════════════════════════════════════
+    scene.add(new THREE.AmbientLight(0x112211, 1.1));
+
+    const moon = new THREE.DirectionalLight(0x223322, 0.5);
+    moon.position.set(-15, 30, 10);
+    scene.add(moon);
+
+    // Destination glow — red orb
+    const DEST = new THREE.Vector3(22, 0, -38);
+
+    const destLight = new THREE.PointLight(0xff2200, 4, 30);
+    destLight.position.set(DEST.x, 2.5, DEST.z);
+    scene.add(destLight);
+
+    const orbMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.4, 12, 12),
+        new THREE.MeshBasicMaterial({ color: 0xff2200 })
+    );
+    orbMesh.position.set(DEST.x, 2.5, DEST.z);
+    scene.add(orbMesh);
+
+    // ════════════════════════════════════════════
+    //  GROUND
+    // ════════════════════════════════════════════
+    const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(500, 500, 1, 1),
+        new THREE.MeshLambertMaterial({ color: 0x081405 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+
+    // ════════════════════════════════════════════
+    //  TREES
+    // ════════════════════════════════════════════
+    const trunkMat   = new THREE.MeshLambertMaterial({ color: 0x150a02 });
+    const leaf1      = new THREE.MeshLambertMaterial({ color: 0x061602 });
+    const leaf2      = new THREE.MeshLambertMaterial({ color: 0x041003 });
+
+    function makeTree(x, z) {
+        const g = new THREE.Group();
+        const sc = 0.7 + Math.random() * 0.9;
+        const h  = (2.2 + Math.random() * 1.8) * sc;
+
+        const trunk = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.12 * sc, 0.2 * sc, h, 7),
+            trunkMat
+        );
+        trunk.position.y = h / 2;
+        g.add(trunk);
+
+        const layers = 2 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < layers; i++) {
+            const r    = (1.3 - i * 0.18) * sc;
+            const cone = new THREE.Mesh(
+                new THREE.ConeGeometry(r, 2 * sc, 7),
+                i % 2 === 0 ? leaf1 : leaf2
+            );
+            cone.position.y = h + i * 1.2 * sc;
+            g.add(cone);
+        }
+
+        g.position.set(x, 0, z);
+        // slight random tilt
+        g.rotation.z = (Math.random() - 0.5) * 0.08;
+        g.rotation.x = (Math.random() - 0.5) * 0.06;
+        return g;
+    }
+
+    for (let i = 0; i < 380; i++) {
+        const angle  = Math.random() * Math.PI * 2;
+        const radius = 5 + Math.random() * 100;
+        scene.add(makeTree(Math.cos(angle) * radius, Math.sin(angle) * radius));
+    }
+
+    // Small rocks scattered
+    const rockMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+    for (let i = 0; i < 60; i++) {
+        const rock = new THREE.Mesh(
+            new THREE.DodecahedronGeometry(0.15 + Math.random() * 0.25, 0),
+            rockMat
+        );
+        const angle  = Math.random() * Math.PI * 2;
+        const radius = 3 + Math.random() * 70;
+        rock.position.set(Math.cos(angle) * radius, 0.1, Math.sin(angle) * radius);
+        rock.rotation.set(Math.random(), Math.random(), Math.random());
+        scene.add(rock);
+    }
+
+    // ════════════════════════════════════════════
+    //  CONTROLS
+    // ════════════════════════════════════════════
+    let yaw = 0, pitch = 0, locked = false;
+    const keys = {};
+
+    document.addEventListener('keydown', e => {
+        keys[e.key.toLowerCase()] = true;
+        if (['w','a','s','d',' '].includes(e.key.toLowerCase())) e.preventDefault();
+    });
+    document.addEventListener('keyup',   e => keys[e.key.toLowerCase()] = false);
+
+    document.addEventListener('pointerlockchange', () => {
+        locked = (document.pointerLockElement !== null);
+    });
+    document.addEventListener('mousemove', e => {
+        if (!locked) return;
+        yaw   -= e.movementX * 0.002;
+        pitch -= e.movementY * 0.002;
+        pitch  = Math.max(-1.35, Math.min(1.35, pitch));
+    });
+
+    function startGame() {
+        document.getElementById('start-screen').style.display = 'none';
+        renderer.domElement.requestPointerLock();
+        beginAI();
+    }
+
+    // Click on canvas when paused re-locks
+    renderer.domElement.addEventListener('click', () => {
+        if (!locked) renderer.domElement.requestPointerLock();
+    });
+
+    // ════════════════════════════════════════════
+    //  AI MESSAGES
+    // ════════════════════════════════════════════
+    const aiLines = [
+        "follow the red light. it will guide you.",
+        "deeper into the woods. that's it.",
+        "you can see it ahead, can't you? keep walking.",
+        "i've been watching you since you entered the room.",
+        "don't stop. it's not far now.",
+        "the light pulses for you. only for you.",
+        "i told you not to press that button.",
+        "...and yet here you are. interesting.",
+        "you're getting closer. I can feel it.",
+        "almost there. don't be afraid of the dark.",
+        "come. come. come.",
+        "i'm not going to hurt you. probably.",
+    ];
+
+    let aiIdx = 0;
+    let aiTimer = null;
+
+    function typeAI(msg) {
+        const el = document.getElementById('ai-typed');
+        el.textContent = '';
+        clearInterval(aiTimer);
+        let i = 0;
+        aiTimer = setInterval(() => {
+            el.textContent += msg[i++];
+            if (i >= msg.length) clearInterval(aiTimer);
+        }, 38);
+    }
+
+    function beginAI() {
+        typeAI(aiLines[0]);
+        aiIdx = 1;
+        setInterval(() => {
+            typeAI(aiLines[aiIdx % aiLines.length]);
+            aiIdx++;
+        }, 5000);
+    }
+
+    // ════════════════════════════════════════════
+    //  LOOP
+    // ════════════════════════════════════════════
+    const clock   = new THREE.Clock();
+    const moveVec = new THREE.Vector3();
+    const euler   = new THREE.Euler(0, 0, 0, 'YXZ');
+    let   bobTime = 0;
+    let   won     = false;
+
+    function tick() {
+        requestAnimationFrame(tick);
+        const dt = Math.min(clock.getDelta(), 0.05);
+
+        if (locked && !won) {
+            // ── Movement ──
+            moveVec.set(0, 0, 0);
+            if (keys['w'] || keys['arrowup'])    moveVec.z -= 1;
+            if (keys['s'] || keys['arrowdown'])  moveVec.z += 1;
+            if (keys['a'] || keys['arrowleft'])  moveVec.x -= 1;
+            if (keys['d'] || keys['arrowright']) moveVec.x += 1;
+
+            const moving = moveVec.lengthSq() > 0;
+
+            if (moving) {
+                moveVec.normalize();
+                euler.set(0, yaw, 0);
+                moveVec.applyEuler(euler);
+                camera.position.addScaledVector(moveVec, 5 * dt);
+                camera.position.y = 1.7;
+
+                // head bob
+                bobTime += dt * 9;
+                camera.position.y = 1.7 + Math.sin(bobTime) * 0.045;
+            }
+
+            camera.rotation.set(pitch, yaw, 0);
+
+            // ── Win check ──
+            const dx = camera.position.x - DEST.x;
+            const dz = camera.position.z - DEST.z;
+            if (Math.sqrt(dx*dx + dz*dz) < 5 && !won) {
+                won = true;
+                document.exitPointerLock();
+                document.getElementById('win-screen').style.display = 'flex';
+            }
+        }
+
+        // Flicker orb
+        const t = performance.now() * 0.003;
+        const flick = 0.8 + Math.sin(t) * 0.2 + Math.sin(t * 2.7) * 0.12;
+        destLight.intensity = 4 * flick;
+        orbMesh.scale.setScalar(0.85 + flick * 0.18);
+
+        renderer.render(scene, camera);
+    }
+
+    tick();
+
+    // Resize
+    window.addEventListener('resize', () => {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+    });
+    </script>
+</body>
+</html>
