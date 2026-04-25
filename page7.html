@@ -167,30 +167,63 @@
 
             <div id="response"></div>
         </div>
+        <a href="page8.html" class="nav-arrow" title="Next Page">&#8250;</a>
     </div>
 
     <script>
-        // Also submit on Enter key
+        // Game-specific roasts (keyword → response)
+        const roasts = [
+            { keys: ['fortnite'],                   msg: '🌿 go touch grass lil bro. fortnite?? really??' },
+            { keys: ['minecraft'],                  msg: '⛏️ building dirt houses at ur age. get a job bro 💀' },
+            { keys: ['roblox'],                     msg: '🧱 ROBLOX?? ur still on roblox?? oh no.' },
+            { keys: ['gta', 'grand theft auto'],    msg: '🚗 bro wants to steal cars instead of making money irl lmaooo' },
+            { keys: ['cod', 'call of duty', 'warzone'], msg: '🔫 camping in a corner won\'t pay ur bills bro 😭' },
+            { keys: ['valorant'],                   msg: '🎯 iron rank moment. go study instead ffs' },
+            { keys: ['league', 'lol', 'league of legends'], msg: '😤 5 hours of league and still hardstuck. skill issue.' },
+            { keys: ['apex', 'apex legends'],       msg: '🪂 third partying ur own life rn. get up.' },
+            { keys: ['fifa', 'fc'],                 msg: '⚽ spending £60 on ultimate team cards?? go outside and actually kick a ball 💀' },
+            { keys: ['among us'],                   msg: '🔴 sus. very sus. the only sus thing here is u not working.' },
+            { keys: ['overwatch'],                  msg: '🎮 overwatch?? what year do u think it is??' },
+            { keys: ['pokemon', 'pokémon'],         msg: '🔴 gotta catch \'em all... except a job apparently 💀' },
+            { keys: ['chess'],                      msg: '♟️ okay nerd. still not an excuse to slack off.' },
+            { keys: ['fall guys'],                  msg: '🫘 falling over in a game AND in life. wild.' },
+            { keys: ['splatoon'],                   msg: '🦑 covering things in ink instead of covering ur bills. bold.' },
+            { keys: ['hollow knight', 'hollow'],    msg: '🐛 dying in a bug game. poetic really.' },
+            { keys: ['dark souls', 'elden ring', 'sekiro'], msg: '💀 skill issue. in the game AND in real life. go work.' },
+            { keys: ['terraria'],                   msg: '⛏️ 2D minecraft?? u need help bro.' },
+            { keys: ['stardew', 'stardew valley'],  msg: '🌾 farming in a game while ur real life is in shambles 😭' },
+        ];
+
+        const defaultMsg = '😂 too bad lmaoo. get off ur bum and work, big boi 💪';
+
         document.getElementById('game-input').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') submitGame();
         });
 
         function submitGame() {
-            const input = document.getElementById('game-input').value.trim();
-            if (!input) return;
+            const raw   = document.getElementById('game-input').value.trim();
+            if (!raw) return;
+            const lower = raw.toLowerCase();
+
+            // Find matching roast
+            let msg = defaultMsg;
+            for (const entry of roasts) {
+                if (entry.keys.some(k => lower.includes(k))) {
+                    msg = entry.msg;
+                    break;
+                }
+            }
 
             const resp = document.getElementById('response');
             resp.style.display = 'block';
             resp.textContent = '';
 
-            const msg = '😂 too bad lmaoo. get off ur bum and work, big boi 💪';
             let i = 0;
             const t = setInterval(() => {
                 resp.textContent += msg[i++];
                 if (i >= msg.length) clearInterval(t);
             }, 35);
 
-            // Disable input after submit
             document.getElementById('game-input').disabled = true;
         }
     </script>
