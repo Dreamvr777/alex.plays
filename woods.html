@@ -496,10 +496,9 @@
     function triggerJumpscare() {
         const js = document.getElementById('jumpscare');
         js.style.display = 'flex';
-        // Dismiss jumpscare after 3.5 seconds, resume game
+        // After 3.5 seconds — RICKROLL 😈
         setTimeout(() => {
-            js.style.display = 'none';
-            if (locked) renderer.domElement.requestPointerLock();
+            window.location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
         }, 3500);
     }
 
