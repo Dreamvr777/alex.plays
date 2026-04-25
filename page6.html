@@ -27,7 +27,7 @@
         }
 
         .container {
-            width: 500px;
+            width: 520px;
             max-width: 100%;
             background-color: #000000;
             padding: 30px 20px;
@@ -83,23 +83,113 @@
             box-shadow: 0 0 20px rgba(0, 207, 255, 0.6);
         }
 
-        .play-button {
-            display: inline-block;
-            margin-top: 24px;
-            padding: 12px 24px;
+        /* Button grid */
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .fake-btn {
+            padding: 10px 6px;
             background: linear-gradient(135deg, #00001a, #00cfff);
             color: #00cfff;
             font-weight: bold;
-            font-size: 20px;
-            text-decoration: none;
-            border-radius: 8px;
+            font-size: 13px;
             border: 2px solid #00cfff;
+            border-radius: 8px;
+            cursor: pointer;
             transition: transform 0.15s, box-shadow 0.15s;
+            font-family: inherit;
+            font-style: italic;
         }
 
-        .play-button:hover {
+        .fake-btn:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 16px rgba(0, 207, 255, 0.5);
+            box-shadow: 0 0 12px rgba(0, 207, 255, 0.5);
+        }
+
+        /* The REAL button — barely visible */
+        .real-btn {
+            padding: 10px 6px;
+            background: linear-gradient(135deg, #00001a, #00cfff);
+            color: #00cfff;
+            font-weight: bold;
+            font-size: 13px;
+            border: 2px solid #00cfff;
+            border-radius: 8px;
+            cursor: pointer;
+            opacity: 0.08;
+            transition: transform 0.15s, box-shadow 0.15s;
+            font-family: inherit;
+            font-style: italic;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .real-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 12px rgba(0, 207, 255, 0.5);
+        }
+
+        /* Wrong shake animation */
+        @keyframes shake {
+            0%   { transform: translateX(0); }
+            20%  { transform: translateX(-6px); }
+            40%  { transform: translateX(6px); }
+            60%  { transform: translateX(-4px); }
+            80%  { transform: translateX(4px); }
+            100% { transform: translateX(0); }
+        }
+
+        .shake {
+            animation: shake 0.4s ease;
+        }
+
+        /* Feedback message */
+        #feedback {
+            margin-top: 14px;
+            font-size: 1rem;
+            min-height: 24px;
+            color: #ff4444;
+            text-shadow: 0 0 8px #ff0000;
+            transition: opacity 0.3s;
+        }
+
+        #feedback.good {
+            color: #00cfff;
+            text-shadow: 0 0 8px #00cfff;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid #222;
+            margin: 22px 0 18px;
+        }
+
+        .find-btn {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 12px 28px;
+            background: #0a0000;
+            color: #ff2200;
+            font-weight: bold;
+            font-size: 17px;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 2px solid #ff2200;
+            font-style: italic;
+            letter-spacing: 1px;
+            transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 0 10px rgba(255,34,0,0.3);
+        }
+
+        .find-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 22px rgba(255, 34, 0, 0.7);
         }
     </style>
 </head>
@@ -109,9 +199,65 @@
         <div class="container">
             <p class="page-label">Page 6</p>
             <h1>🤯 BRO FOUND PAGE 6 🤯</h1>
-            <p>how are u still going?? page 6 doesn't even exist officially<br><br>ur actually built different ngl. this is the void. welcome to the void.</p>
-            <a href="hollow-night.html" class="play-button">🌑 Enter the Void</a>
+            <p>one of these buttons is real.<br>the rest are fake. good luck lol 💀</p>
+
+            <div class="btn-grid" id="btnGrid">
+                <button class="fake-btn" onclick="wrong(this)">🌑 Enter</button>
+                <button class="fake-btn" onclick="wrong(this)">🌑 Enter</button>
+                <button class="fake-btn" onclick="wrong(this)">🌑 Enter</button>
+                <button class="fake-btn" onclick="wrong(this)">🌑 Enter</button>
+                <button class="fake-btn" onclick="wrong(this)">🌑 Enter</button>
+                <button class="fake-btn" onclick="wrong(this)">🌑 Enter</button>
+                <a href="hollow-night.html" class="real-btn">🌑 Enter</a>
+                <button class="fake-btn" onclick="wrong(this)">🌑 Enter</button>
+                <button class="fake-btn" onclick="wrong(this)">🌑 Enter</button>
+                <button class="fake-btn" onclick="wrong(this)">🌑 Enter</button>
+                <button class="fake-btn" onclick="wrong(this)">🌑 Enter</button>
+                <button class="fake-btn" onclick="wrong(this)">🌑 Enter</button>
+            </div>
+
+            <p id="feedback"></p>
+            <hr class="divider">
+            <a href="ai-room.html" class="find-btn">🔍 find the button</a>
         </div>
     </div>
+
+    <script>
+        const wrongMessages = [
+            "❌ nope lmaooo",
+            "❌ not even close",
+            "❌ bro really thought",
+            "❌ L + ratio",
+            "❌ try again bestie",
+            "❌ ur cooked",
+            "❌ WRONG 💀",
+            "❌ skill issue",
+        ];
+        let wrongCount = 0;
+
+        function wrong(btn) {
+            btn.classList.remove("shake");
+            void btn.offsetWidth; // reflow to restart animation
+            btn.classList.add("shake");
+
+            const fb = document.getElementById("feedback");
+            fb.className = "";
+            fb.textContent = wrongMessages[wrongCount % wrongMessages.length];
+            wrongCount++;
+
+            setTimeout(() => btn.classList.remove("shake"), 400);
+        }
+
+        // Shuffle the grid on load so real button position is random
+        window.addEventListener("DOMContentLoaded", () => {
+            const grid = document.getElementById("btnGrid");
+            const items = Array.from(grid.children);
+            for (let i = items.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                grid.appendChild(items[j]);
+                items.splice(j, 1);
+            }
+        });
+    </script>
 </body>
 </html>

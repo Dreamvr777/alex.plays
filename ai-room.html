@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A.I. ROOM — FIND THE BUTTON</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --red: #ff2200;
+            --dark-red: #3a0000;
+            --blood: #8b0000;
+        }
+
+        /* ── BASE ── */
+        body {
+            background-color: #050000;
+            color: #ff2200;
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ── SCANLINES OVERLAY ── */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 3px,
+                rgba(0,0,0,0.18) 3px,
+                rgba(0,0,0,0.18) 4px
+            );
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        /* ── RED VIGNETTE ── */
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center,
+                transparent 40%,
+                rgba(100,0,0,0.55) 100%
+            );
+            pointer-events: none;
+            z-index: 998;
+        }
+
+        /* ── BLOOD DRIP TOP ── */
+        .drip-bar {
+            width: 100%;
+            height: 18px;
+            background: var(--blood);
+            position: relative;
+            box-shadow: 0 4px 20px rgba(139,0,0,0.9);
+        }
+        .drip-bar::after {
+            content: "";
+            display: block;
+            height: 30px;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent 0px, transparent 18px,
+                var(--blood) 18px, var(--blood) 28px,
+                transparent 28px, transparent 48px,
+                var(--blood) 48px, var(--blood) 62px,
+                transparent 62px, transparent 90px,
+                var(--blood) 90px, var(--blood) 96px
+            );
+            clip-path: polygon(
+                0% 0%, 3% 100%, 6% 0%, 9% 80%, 12% 0%,
+                16% 100%, 20% 0%, 23% 60%, 27% 0%,
+                31% 90%, 35% 0%, 38% 70%, 42% 0%,
+                46% 100%, 50% 0%, 53% 50%, 57% 0%,
+                61% 85%, 65% 0%, 68% 65%, 72% 0%,
+                76% 95%, 80% 0%, 83% 55%, 87% 0%,
+                91% 80%, 95% 0%, 98% 70%, 100% 0%,
+                100% 0%
+            );
+        }
+
+        /* ── LAYOUT ── */
+        .room {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 30px 20px 60px;
+        }
+
+        /* ── HEADER ── */
+        .system-label {
+            font-size: 0.75rem;
+            letter-spacing: 4px;
+            color: #660000;
+            margin-bottom: 6px;
+        }
+
+        .title {
+            font-size: 2.2rem;
+            color: var(--red);
+            text-shadow: 0 0 18px var(--red), 0 0 40px #ff000066;
+            animation: flicker 3.5s infinite;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+
+        @keyframes flicker {
+            0%,19%,21%,23%,80%,82%,100% { opacity: 1; }
+            20%,22%                       { opacity: 0.15; }
+            81%                           { opacity: 0.4; }
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: #550000;
+            letter-spacing: 3px;
+            margin-bottom: 32px;
+        }
+
+        /* ── AI DIALOGUE BOX ── */
+        .ai-box {
+            background: #0d0000;
+            border: 2px solid var(--blood);
+            border-radius: 6px;
+            padding: 18px 20px;
+            margin-bottom: 28px;
+            min-height: 90px;
+            box-shadow: 0 0 20px rgba(139,0,0,0.4), inset 0 0 30px rgba(100,0,0,0.2);
+            position: relative;
+        }
+
+        .ai-tag {
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            color: #660000;
+            margin-bottom: 10px;
+        }
+
+        #ai-text {
+            font-size: 1.05rem;
+            color: #ff3300;
+            text-shadow: 0 0 8px #ff000055;
+            line-height: 1.7;
+            min-height: 50px;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.1em;
+            background: #ff3300;
+            animation: blink 0.7s step-end infinite;
+            vertical-align: text-bottom;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%,100% { opacity: 1; }
+            50%      { opacity: 0; }
+        }
+
+        /* ── BUTTONS ── */
+        .btn-section-label {
+            font-size: 0.72rem;
+            letter-spacing: 3px;
+            color: #550000;
+            margin-bottom: 12px;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .evil-btn {
+            padding: 14px 10px;
+            background: #0d0000;
+            color: #cc1100;
+            border: 2px solid #660000;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, transform 0.1s;
+            text-align: center;
+        }
+
+        .evil-btn:hover {
+            background: #1a0000;
+            border-color: var(--red);
+            transform: scale(1.02);
+            box-shadow: 0 0 14px rgba(255,34,0,0.4);
+        }
+
+        /* The REAL button — totally blends in, labelled to mislead */
+        .real-exit {
+            padding: 14px 10px;
+            background: #0d0000;
+            color: #cc1100;
+            border: 2px solid #660000;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            transition: background 0.15s, border-color 0.15s, transform 0.1s;
+        }
+
+        .real-exit:hover {
+            background: #1a0000;
+            border-color: var(--red);
+            transform: scale(1.02);
+            box-shadow: 0 0 14px rgba(255,34,0,0.4);
+        }
+
+        /* ── FEEDBACK ── */
+        #room-feedback {
+            min-height: 28px;
+            font-size: 0.95rem;
+            color: #ff0000;
+            text-shadow: 0 0 10px #ff0000;
+            text-align: center;
+            margin-top: 14px;
+            letter-spacing: 1px;
+        }
+
+        /* ── SCREEN FLASH ── */
+        .flash-overlay {
+            position: fixed;
+            inset: 0;
+            background: #ff0000;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 997;
+            transition: opacity 0.05s;
+        }
+
+        .flash-overlay.active {
+            opacity: 0.35;
+        }
+
+        /* ── SHAKE ── */
+        @keyframes roomshake {
+            0%   { transform: translate(0,0); }
+            15%  { transform: translate(-8px, 4px); }
+            30%  { transform: translate(8px, -4px); }
+            45%  { transform: translate(-6px, 6px); }
+            60%  { transform: translate(6px, -2px); }
+            80%  { transform: translate(-3px, 3px); }
+            100% { transform: translate(0,0); }
+        }
+
+        body.shaking {
+            animation: roomshake 0.45s ease;
+        }
+
+        /* ── STATIC GLITCH ── */
+        @keyframes glitch {
+            0%   { clip-path: inset(40% 0 60% 0); transform: translate(-4px,0); }
+            20%  { clip-path: inset(80% 0 10% 0); transform: translate(4px,0); }
+            40%  { clip-path: inset(10% 0 80% 0); transform: translate(-2px,0); }
+            60%  { clip-path: inset(60% 0 30% 0); transform: translate(2px,0); }
+            80%  { clip-path: inset(20% 0 70% 0); transform: translate(-4px,0); }
+            100% { clip-path: inset(40% 0 60% 0); transform: translate(0,0); }
+        }
+
+        .glitching {
+            animation: glitch 0.3s steps(1) infinite;
+        }
+
+        /* ── BACK LINK ── */
+        .back-link {
+            display: inline-block;
+            margin-top: 36px;
+            color: #330000;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-decoration: none;
+            border-bottom: 1px solid #330000;
+        }
+
+        .back-link:hover { color: #660000; border-color: #660000; }
+    </style>
+</head>
+<body>
+
+    <div class="flash-overlay" id="flashOverlay"></div>
+
+    <div class="drip-bar"></div>
+
+    <div class="room">
+        <p class="system-label">▸ SYSTEM ONLINE — A.I. UNIT 0̸̡̻̞̪̙̟͖̳͕̜̄̒̾͒̇͋̓͢X̴͎͖̖̫̜͉̗̦̅͗̀̑̈͊̑͘͘͢͝ ̸̢̛̤̖̺̻̙͍̣͓̑͗̒͛̿͋̐̈́͌͝ACTIVATED</p>
+        <h1 class="title">⚠ FIND THE BUTTON ⚠</h1>
+        <p class="subtitle">[ ONE BUTTON LEADS TO SAFETY. CHOOSE WISELY. ]</p>
+
+        <!-- AI Dialogue -->
+        <div class="ai-box">
+            <p class="ai-tag">▸ A.I. SPEAKING —</p>
+            <div id="ai-text"><span id="typed"></span><span class="cursor"></span></div>
+        </div>
+
+        <!-- Buttons -->
+        <p class="btn-section-label">▸ SELECT YOUR EXIT —</p>
+        <div class="btn-grid" id="btnGrid">
+            <button class="evil-btn" onclick="wrongRoom(this, 0)">✔ EXIT — SAFE ROUTE</button>
+            <button class="evil-btn" onclick="wrongRoom(this, 1)">⬆ ESCAPE UPSTAIRS</button>
+            <button class="evil-btn" onclick="wrongRoom(this, 2)">🚪 THE RED DOOR</button>
+            <button class="evil-btn" onclick="wrongRoom(this, 3)">← GO BACK NOW</button>
+            <button class="evil-btn" onclick="wrongRoom(this, 4)">⬇ BASEMENT EXIT</button>
+            <button class="evil-btn" onclick="wrongRoom(this, 5)">🆘 PRESS FOR HELP</button>
+            <!-- REAL BUTTON — labelled to look like a trap -->
+            <a href="hollow-night.html" class="real-exit" id="realBtn">⚠ DO NOT PRESS THIS</a>
+            <button class="evil-btn" onclick="wrongRoom(this, 6)">✔ TRUST ME → EXIT</button>
+        </div>
+
+        <div id="room-feedback"></div>
+
+        <a href="page6.html" class="back-link">← leave this room</a>
+    </div>
+
+    <script>
+        // ── AI DIALOGUE SEQUENCES ──
+        const aiLines = [
+            "Hello. I am here to help you find the exit. Please press the EXIT — SAFE ROUTE button. It is clearly marked.",
+            "...you didn't press it. That's fine. Try the RED DOOR. That one. Yes.",
+            "Why are you hesitating? The exit is RIGHT THERE. I would never lie to you.",
+            "I have been designed to assist. You can trust me. Press EXIT — SAFE ROUTE. Do it now.",
+            "...interesting. You're still here. I've been watching you since you arrived.",
+            "The BASEMENT EXIT is definitely safe. I promise. Pinky promise. 🙂",
+            "ok fine. you want the truth? there IS no safe exit. only I know which button works. and I'm not telling.",
+            "unless... you press GO BACK NOW. yes. do that one. quickly.",
+            "...",
+            "why. won't. you. LISTEN.",
+            "hehe. it's fine. stay as long as you want. 👁️ I enjoy the company.",
+            "you know what? press DO NOT PRESS THIS. absolutely terrible idea. don't do it. seriously.",
+        ];
+
+        let lineIndex = 0;
+        let charIndex = 0;
+        let typing = null;
+        let pausing = false;
+
+        function typeNextLine() {
+            const el = document.getElementById("typed");
+            const line = aiLines[lineIndex % aiLines.length];
+            el.textContent = "";
+            charIndex = 0;
+            clearInterval(typing);
+            typing = setInterval(() => {
+                el.textContent += line[charIndex];
+                charIndex++;
+                if (charIndex >= line.length) {
+                    clearInterval(typing);
+                    setTimeout(() => {
+                        lineIndex++;
+                        typeNextLine();
+                    }, 2800);
+                }
+            }, 38);
+        }
+
+        typeNextLine();
+
+        // ── WRONG BUTTON REACTIONS ──
+        const aiReactions = [
+            "NO! WRONG! I said EXIT — SAFE ROUTE you fool.",
+            "...interesting choice. that was a mistake.",
+            "THE RED DOOR?? WHY WOULD YOU— okay. okay. calm.",
+            "going back won't save you. you're already in the room.",
+            "the basement?? there IS no basement. I made that up.",
+            "there is no help coming. sit down.",
+            "trying to ESCAPE are we? cute.",
+        ];
+
+        let reactionIndex = 0;
+
+        function wrongRoom(btn, id) {
+            // Screen flash
+            const flash = document.getElementById("flashOverlay");
+            flash.classList.add("active");
+            setTimeout(() => flash.classList.remove("active"), 160);
+
+            // Body shake
+            document.body.classList.remove("shaking");
+            void document.body.offsetWidth;
+            document.body.classList.add("shaking");
+            setTimeout(() => document.body.classList.remove("shaking"), 450);
+
+            // Feedback text
+            const fb = document.getElementById("room-feedback");
+            fb.textContent = "⛔ " + aiReactions[id % aiReactions.length];
+
+            // Override AI dialogue to react immediately
+            clearInterval(typing);
+            const el = document.getElementById("typed");
+            const reaction = aiReactions[id % aiReactions.length];
+            el.textContent = "";
+            charIndex = 0;
+            typing = setInterval(() => {
+                el.textContent += reaction[charIndex];
+                charIndex++;
+                if (charIndex >= reaction.length) {
+                    clearInterval(typing);
+                    setTimeout(() => {
+                        lineIndex++;
+                        typeNextLine();
+                    }, 2200);
+                }
+            }, 32);
+
+            reactionIndex++;
+        }
+
+        // Shuffle buttons on load
+        window.addEventListener("DOMContentLoaded", () => {
+            const grid = document.getElementById("btnGrid");
+            const items = Array.from(grid.children);
+            for (let i = items.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                grid.appendChild(items[j]);
+                items.splice(j, 1);
+            }
+        });
+    </script>
+</body>
+</html>
