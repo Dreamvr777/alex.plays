@@ -151,6 +151,78 @@
             z-index: 20;
         }
 
+        /* ── COUNTDOWN ── */
+        #countdown {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            font-family: 'Courier New', monospace;
+            font-size: 9rem;
+            font-weight: 900;
+            color: #ff2200;
+            text-shadow: 0 0 60px #ff2200, 0 0 100px #ff000088;
+            z-index: 150;
+            pointer-events: none;
+            animation: cdpop 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes cdpop {
+            0%   { transform: translate(-50%,-50%) scale(2.2); opacity: 0; }
+            40%  { opacity: 1; }
+            100% { transform: translate(-50%,-50%) scale(1);   opacity: 1; }
+        }
+
+        /* ── JUMPSCARE ── */
+        #jumpscare {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #bb0000;
+            z-index: 500;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: 'Courier New', monospace;
+            animation: scareshake 0.08s linear infinite;
+        }
+        @keyframes scareshake {
+            0%   { transform: translate(0,0)     rotate(0deg); }
+            25%  { transform: translate(-12px,9px) rotate(-2deg); }
+            50%  { transform: translate(12px,-9px) rotate(2deg); }
+            75%  { transform: translate(-8px,6px)  rotate(-1deg); }
+            100% { transform: translate(0,0)     rotate(0deg); }
+        }
+        .scare-eyes {
+            font-size: 10rem;
+            line-height: 1;
+            letter-spacing: 2rem;
+            animation: eyeblink 0.12s step-end infinite;
+        }
+        @keyframes eyeblink { 0%,49% { opacity:1; } 50%,100% { opacity:0.6; } }
+        .scare-mouth {
+            font-size: 3.5rem;
+            color: #000;
+            letter-spacing: 0.2rem;
+            line-height: 1;
+        }
+        .scare-text {
+            font-size: 4.2rem;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 6px;
+            text-shadow: 6px 6px 0 #000, -2px -2px 0 #000;
+            margin-top: 16px;
+            animation: textflash 0.18s step-end infinite;
+        }
+        @keyframes textflash { 0%,60% { opacity:1; } 61%,100% { opacity:0.85; } }
+        .scare-sub {
+            font-size: 1.5rem;
+            color: #ffcccc;
+            letter-spacing: 4px;
+            text-shadow: 2px 2px 0 #000;
+        }
+
         /* ── WIN SCREEN ── */
         #win-screen {
             display: none;
@@ -220,6 +292,17 @@
         A — LEFT<br>
         D — RIGHT<br>
         MOUSE — LOOK
+    </div>
+
+    <!-- Countdown -->
+    <div id="countdown"></div>
+
+    <!-- Jumpscare -->
+    <div id="jumpscare">
+        <div class="scare-eyes">👁️&nbsp;&nbsp;&nbsp;👁️</div>
+        <div class="scare-mouth">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓</div>
+        <div class="scare-text">BAD BOY HAHAHA</div>
+        <div class="scare-sub">i told you not to come here 😈</div>
     </div>
 
     <!-- Win screen -->
@@ -363,6 +446,61 @@
         document.getElementById('start-screen').style.display = 'none';
         renderer.domElement.requestPointerLock();
         beginAI();
+        // Countdown starts 5 seconds after game begins
+        setTimeout(startCountdown, 5000);
+    }
+
+    // ════════════════════════════════════════════
+    //  COUNTDOWN + JUMPSCARE
+    // ════════════════════════════════════════════
+    function startCountdown() {
+        let count = 5;
+        const el = document.getElementById('countdown');
+
+        function showCount(n) {
+            el.textContent = n;
+            el.style.display = 'block';
+            // Re-trigger pop animation
+            el.style.animation = 'none';
+            void el.offsetWidth;
+            el.style.animation = 'cdpop 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards';
+            // Turn red at 3
+            el.style.color = n <= 3 ? '#ff0000' : '#ff2200';
+            el.style.textShadow = n <= 3
+                ? '0 0 80px #ff0000, 0 0 140px #ff000099'
+                : '0 0 60px #ff2200, 0 0 100px #ff000088';
+        }
+
+        showCount(count);
+
+        const interval = setInterval(() => {
+            count--;
+            if (count === 0) {
+                clearInterval(interval);
+                el.style.display = 'none';
+                return;
+            }
+            showCount(count);
+
+            if (count === 3) {
+                // Fire jumpscare right as "3" appears
+                setTimeout(() => {
+                    el.style.display = 'none';
+                    clearInterval(interval);
+                    triggerJumpscare();
+                }, 600);
+            }
+        }, 1000);
+    }
+
+    function triggerJumpscare() {
+        const js = document.getElementById('jumpscare');
+        js.style.display = 'flex';
+        // Dismiss jumpscare after 3.5 seconds, resume game
+        setTimeout(() => {
+            js.style.display = 'none';
+            if (locked) renderer.domElement.requestPointerLock();
+        }, 3500);
     }
 
     // Click on canvas when paused re-locks
