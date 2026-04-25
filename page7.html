@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>m3gtse92 - Page 7</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a0800, #ff8c00);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            padding: 20px;
+        }
+
+        .page-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .container {
+            width: 520px;
+            max-width: 100%;
+            background-color: #000;
+            padding: 30px 24px;
+            border-radius: 10px;
+            border: 3px solid #333;
+            font-style: italic;
+            font-weight: bold;
+            text-align: center;
+            color: #fff;
+        }
+
+        .page-label {
+            color: #ff8c00;
+            text-shadow: 0 0 8px #ff8c00;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .container h1 {
+            color: #ff8c00;
+            text-shadow: 0 0 12px #ff8c00;
+            font-size: 1.9rem;
+            margin-bottom: 10px;
+        }
+
+        .container p {
+            color: #ffe0b0;
+            text-shadow: 0 0 8px #ff8c0066;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        /* Input */
+        .input-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        #game-input {
+            flex: 1;
+            padding: 12px 14px;
+            background: #0d0600;
+            color: #ff8c00;
+            border: 2px solid #663300;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            font-style: italic;
+            font-weight: bold;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            caret-color: #ff8c00;
+        }
+
+        #game-input::placeholder {
+            color: #553300;
+            font-style: italic;
+        }
+
+        #game-input:focus {
+            border-color: #ff8c00;
+            box-shadow: 0 0 12px rgba(255, 140, 0, 0.35);
+        }
+
+        .submit-btn {
+            padding: 12px 18px;
+            background: linear-gradient(135deg, #1a0800, #ff8c00);
+            color: #ff8c00;
+            border: 2px solid #ff8c00;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: bold;
+            font-style: italic;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .submit-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 16px rgba(255, 140, 0, 0.5);
+        }
+
+        /* Response */
+        #response {
+            margin-top: 20px;
+            font-size: 1.15rem;
+            color: #ff8c00;
+            text-shadow: 0 0 10px #ff8c00;
+            min-height: 28px;
+            line-height: 1.6;
+            display: none;
+        }
+
+        /* Nav arrows */
+        .nav-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 54px;
+            height: 54px;
+            background: linear-gradient(135deg, #1a0800, #ff8c00);
+            border: 2px solid #ff8c00;
+            border-radius: 50%;
+            color: #ff8c00;
+            font-size: 28px;
+            text-decoration: none;
+            transition: transform 0.15s, box-shadow 0.15s;
+            flex-shrink: 0;
+        }
+
+        .nav-arrow:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255, 140, 0, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <a href="page6.html" class="nav-arrow" title="Previous Page">&#8249;</a>
+        <div class="container">
+            <p class="page-label">Page 7</p>
+            <h1>🎮 what game do u want?</h1>
+            <p>type the game u want to play and press enter.<br>i might just make it happen... 👀</p>
+
+            <div class="input-row">
+                <input
+                    id="game-input"
+                    type="text"
+                    placeholder="type a game here..."
+                    autocomplete="off"
+                />
+                <button class="submit-btn" onclick="submitGame()">Enter ↵</button>
+            </div>
+
+            <div id="response"></div>
+        </div>
+    </div>
+
+    <script>
+        // Also submit on Enter key
+        document.getElementById('game-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') submitGame();
+        });
+
+        function submitGame() {
+            const input = document.getElementById('game-input').value.trim();
+            if (!input) return;
+
+            const resp = document.getElementById('response');
+            resp.style.display = 'block';
+            resp.textContent = '';
+
+            const msg = '😂 too bad lmaoo. get off ur bum and work, big boi 💪';
+            let i = 0;
+            const t = setInterval(() => {
+                resp.textContent += msg[i++];
+                if (i >= msg.length) clearInterval(t);
+            }, 35);
+
+            // Disable input after submit
+            document.getElementById('game-input').disabled = true;
+        }
+    </script>
+</body>
+</html>
