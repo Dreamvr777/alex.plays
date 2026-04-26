@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>m3gtse92 - Thank You</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #0d0500;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* ── Particle canvas behind everything ── */
+        #heartCanvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ── Content layer ── */
+        .content-layer {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Scroll sections ── */
+        .scroll-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        /* ── Cards ── */
+        .message-card {
+            width: 560px;
+            max-width: 100%;
+            background: rgba(10, 4, 0, 0.82);
+            border: 2px solid #ff8c2255;
+            border-radius: 20px;
+            padding: 44px 34px;
+            text-align: center;
+            font-style: italic;
+            font-weight: bold;
+            opacity: 0;
+            transform: translateY(60px) scale(0.97);
+            transition: opacity 0.85s ease, transform 0.85s ease;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 0 50px #ff6b0018, inset 0 0 40px #2a100022;
+        }
+
+        .message-card.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* ── Page label ── */
+        .page-label {
+            font-size: 0.78rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #ffb347;
+            text-shadow: 0 0 12px #ffb347;
+            margin-bottom: 20px;
+        }
+
+        /* ── Headings ── */
+        .message-card h1 {
+            font-size: 2.1rem;
+            line-height: 1.3;
+            margin-bottom: 14px;
+            background: linear-gradient(135deg, #ffb347, #ff6b6b, #ffd700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 16px #ff8c2266);
+        }
+
+        /* ── Body text ── */
+        .message-card p {
+            font-size: 1.08rem;
+            color: #ffddb3;
+            text-shadow: 0 0 8px #ff8c2222;
+            line-height: 1.8;
+        }
+
+        .message-card p b { color: #ffb347; }
+        .message-card p em { color: #ff9f6b; }
+
+        /* ── Big thank you card ── */
+        .thankyou-card {
+            width: 620px;
+        }
+
+        .big-ty {
+            font-size: 5rem;
+            line-height: 1;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffd700, #ff8c22, #ff6b6b, #ffd700);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shiftGrad 4s ease-in-out infinite;
+            filter: drop-shadow(0 0 24px #ffb34766);
+        }
+
+        @keyframes shiftGrad {
+            0%, 100% { background-position: 0% 50%; }
+            50%       { background-position: 100% 50%; }
+        }
+
+        /* ── Neon divider ── */
+        .neon-line {
+            width: 70px;
+            height: 3px;
+            background: linear-gradient(90deg, #ff6b6b, #ffd700, #ff8c22);
+            border-radius: 4px;
+            margin: 20px auto;
+            box-shadow: 0 0 16px #ff8c2288;
+        }
+
+        /* ── Scroll hint ── */
+        .scroll-hint {
+            margin-top: 26px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: #ffb347;
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            animation: bounce 1.3s ease-in-out infinite;
+        }
+        .scroll-hint .arrow { font-size: 1.8rem; line-height: 1; }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(9px); }
+        }
+
+        /* ── Click canvas card ── */
+        .canvas-card { width: 620px; }
+
+        #sparkCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            margin-top: 18px;
+            border-radius: 12px;
+            border: 2px solid #ff8c2233;
+            cursor: crosshair;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ── Signature ── */
+        .signature {
+            margin-top: 22px;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+            background: linear-gradient(90deg, #ffd700, #ff8c22);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 10px #ff8c2266);
+        }
+
+        /* ── Star rating row ── */
+        .stars {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 16px 0 8px;
+        }
+        .stars span {
+            font-size: 2rem;
+            animation: starPop 0.4s ease backwards;
+            cursor: default;
+        }
+        .stars span:nth-child(1) { animation-delay: 0.0s; }
+        .stars span:nth-child(2) { animation-delay: 0.1s; }
+        .stars span:nth-child(3) { animation-delay: 0.2s; }
+        .stars span:nth-child(4) { animation-delay: 0.3s; }
+        .stars span:nth-child(5) { animation-delay: 0.4s; }
+
+        @keyframes starPop {
+            0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+            70%  { transform: scale(1.3) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* ── Emoji float ── */
+        @keyframes floatEmoji {
+            0%, 100% { transform: translateY(0) rotate(-3deg); }
+            50%       { transform: translateY(-12px) rotate(3deg); }
+        }
+        .fe { display:inline-block; animation: floatEmoji 3.2s ease-in-out infinite; font-style: normal; }
+        .fe2{ display:inline-block; animation: floatEmoji 2.8s ease-in-out infinite 0.6s; font-style: normal; }
+        .fe3{ display:inline-block; animation: floatEmoji 3.6s ease-in-out infinite 1.2s; font-style: normal; }
+
+        /* ── Back arrow ── */
+        .back-arrow {
+            position: fixed;
+            bottom: 28px;
+            left: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 54px;
+            height: 54px;
+            background: linear-gradient(135deg, #1a0800, #ff8c22);
+            border: 2px solid #ffb347;
+            border-radius: 50%;
+            color: #ffd700;
+            font-size: 28px;
+            text-decoration: none;
+            transition: transform 0.15s, box-shadow 0.15s;
+            z-index: 999;
+        }
+        .back-arrow:hover {
+            transform: scale(1.12);
+            box-shadow: 0 0 24px rgba(255, 180, 70, 0.7);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Floating hearts / embers background -->
+<canvas id="heartCanvas"></canvas>
+
+<div class="content-layer">
+
+    <!-- ── Section 1 — Big thank you ── -->
+    <div class="scroll-section">
+        <div class="message-card thankyou-card" data-reveal>
+            <p class="page-label">✦ a message for u ✦</p>
+            <div class="big-ty">thank you</div>
+            <div class="stars">
+                <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
+            </div>
+            <p>for real though<br>u actually made it all the way here<br>that means everything to me 🧡</p>
+            <div class="neon-line"></div>
+            <div class="scroll-hint">
+                <span>there's more</span>
+                <span class="arrow">↓</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Section 2 ── -->
+    <div class="scroll-section">
+        <div class="message-card" data-reveal>
+            <h1>i made all of this<br>just for u <span class="fe">🫶</span></h1>
+            <p>
+                every page, every game, every little detail<br>
+                i put it all in there because<br>
+                <b>u deserve something special</b>
+            </p>
+            <div class="scroll-hint"><span class="arrow">↓</span></div>
+        </div>
+    </div>
+
+    <!-- ── Section 3 ── -->
+    <div class="scroll-section">
+        <div class="message-card" data-reveal>
+            <h1>i hope this made<br>u smile <span class="fe2">🌸</span></h1>
+            <p>
+                even just a little bit<br>
+                that's all i ever wanted
+            </p>
+            <div class="neon-line"></div>
+            <p style="margin-top:14px; color:#ff9f6b;">
+                u're actually one of a kind u know that
+            </p>
+            <div class="scroll-hint"><span class="arrow">↓</span></div>
+        </div>
+    </div>
+
+    <!-- ── Section 4 — Leave ur mark ── -->
+    <div class="scroll-section">
+        <div class="message-card canvas-card" data-reveal>
+            <h1>leave ur mark <span class="fe3">✨</span></h1>
+            <p><b>click / tap</b> anywhere to leave a little spark<br>this canvas is all urs</p>
+            <canvas id="sparkCanvas" width="580" height="240"></canvas>
+        </div>
+    </div>
+
+    <!-- ── Section 5 — Final message ── -->
+    <div class="scroll-section">
+        <div class="message-card" data-reveal>
+            <h1>ok this is actually<br>goodbye now 😭</h1>
+            <p>
+                but not forever<br>
+                because u can always<br>
+                come back and scroll through again 🫂
+            </p>
+            <div class="neon-line"></div>
+            <p style="margin-top:16px; font-size:1.1rem;">
+                stay golden <span style="font-style:normal">🌟</span>
+            </p>
+            <div class="signature">— m3gtse92 🧡</div>
+        </div>
+    </div>
+
+</div><!-- /content-layer -->
+
+<a href="page11.html" class="back-arrow" title="Previous Page">&#8249;</a>
+
+<script>
+/* ════════════════════════════════════════════
+   SCROLL REVEAL
+════════════════════════════════════════════ */
+const revealObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.18 });
+document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
+
+/* ════════════════════════════════════════════
+   FLOATING HEARTS / EMBERS BACKGROUND
+════════════════════════════════════════════ */
+(function () {
+    const cv  = document.getElementById('heartCanvas');
+    const ctx = cv.getContext('2d');
+    let W, H;
+
+    const SYMBOLS = ['♥', '✦', '·', '✧', '♡', '⋆', '✿', '°'];
+    const COLS    = ['#ff6b6b', '#ffb347', '#ffd700', '#ff8c22', '#ff9f9f', '#ffe0a0'];
+
+    const particles = [];
+    const COUNT = 60;
+
+    function resize() {
+        W = cv.width  = window.innerWidth;
+        H = cv.height = window.innerHeight;
+    }
+
+    function makeParticle() {
+        return {
+            x    : Math.random() * W,
+            y    : H + 20,
+            vy   : -(0.4 + Math.random() * 0.8),
+            vx   : (Math.random() - 0.5) * 0.4,
+            sym  : SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
+            col  : COLS[Math.floor(Math.random() * COLS.length)],
+            size : 10 + Math.random() * 18,
+            a    : 0,
+            maxA : 0.35 + Math.random() * 0.45,
+            life : 1,
+            phase: Math.random() * Math.PI * 2,
+            freq : 0.015 + Math.random() * 0.02
+        };
+    }
+
+    function init() {
+        for (let i = 0; i < COUNT; i++) {
+            const p = makeParticle();
+            p.y = Math.random() * H;
+            p.a = p.maxA * Math.random();
+            particles.push(p);
+        }
+    }
+
+    function tick() {
+        ctx.clearRect(0, 0, W, H);
+
+        // Warm gradient wash
+        const grad = ctx.createLinearGradient(0, 0, 0, H);
+        grad.addColorStop(0, 'rgba(30,8,0,0.55)');
+        grad.addColorStop(1, 'rgba(15,4,0,0.55)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.y   += p.vy;
+            p.x   += p.vx + Math.sin(p.phase + performance.now() * p.freq) * 0.3;
+            p.life -= 0.0015;
+
+            // Fade in / out
+            if (p.a < p.maxA) p.a += 0.005;
+            if (p.life < 0.2) p.a *= 0.97;
+
+            if (p.y < -30 || p.life <= 0) {
+                particles[i] = makeParticle();
+                continue;
+            }
+
+            ctx.globalAlpha = Math.max(0, p.a);
+            ctx.fillStyle   = p.col;
+            ctx.font        = `${p.size}px serif`;
+            ctx.textAlign   = 'center';
+            ctx.shadowColor = p.col;
+            ctx.shadowBlur  = 10;
+            ctx.fillText(p.sym, p.x, p.y);
+        }
+
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur  = 0;
+        requestAnimationFrame(tick);
+    }
+
+    resize();
+    init();
+    window.addEventListener('resize', resize);
+    requestAnimationFrame(tick);
+})();
+
+/* ════════════════════════════════════════════
+   SPARK CANVAS — LEAVE UR MARK
+════════════════════════════════════════════ */
+(function () {
+    const cv  = document.getElementById('sparkCanvas');
+    const ctx = cv.getContext('2d');
+    const CW  = 580, CH = 240;
+
+    const marks  = [];   // permanent marks
+    const sparks = [];   // burst particles
+
+    const MARK_SYMS = ['♥','✦','✿','⭐','🌸','✨','💛','🧡','🌟','💫'];
+    const COLS = ['#ffd700','#ff8c22','#ff6b6b','#ffb347','#fff0a0','#ff9f6b'];
+
+    function drawBg() {
+        ctx.fillStyle = '#0d0500';
+        ctx.fillRect(0, 0, CW, CH);
+        // subtle grid
+        ctx.strokeStyle = '#1a0a00';
+        ctx.lineWidth   = 1;
+        for (let x = 0; x < CW; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,CH); ctx.stroke(); }
+        for (let y = 0; y < CH; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(CW,y); ctx.stroke(); }
+    }
+
+    function draw() {
+        drawBg();
+
+        // Permanent marks
+        for (const m of marks) {
+            ctx.globalAlpha = m.a;
+            ctx.fillStyle   = m.col;
+            ctx.font        = `${m.size}px serif`;
+            ctx.textAlign   = 'center';
+            ctx.shadowColor = m.col;
+            ctx.shadowBlur  = 12;
+            ctx.fillText(m.sym, m.x, m.y);
+        }
+
+        // Sparks
+        for (let i = sparks.length - 1; i >= 0; i--) {
+            const s = sparks[i];
+            s.x += s.vx; s.y += s.vy;
+            s.vy += 0.12;
+            s.life -= 0.04;
+            if (s.life <= 0) { sparks.splice(i, 1); continue; }
+            ctx.globalAlpha = s.life;
+            ctx.fillStyle   = s.col;
+            ctx.shadowColor = s.col;
+            ctx.shadowBlur  = 8;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur  = 0;
+
+        // Hint text if empty
+        if (marks.length === 0) {
+            ctx.textAlign = 'center';
+            ctx.font      = 'italic 15px system-ui';
+            ctx.fillStyle = '#5a3010';
+            ctx.fillText('tap here to leave ur mark 🧡', CW/2, CH/2);
+        }
+
+        // Counter
+        ctx.fillStyle   = '#ff8c22';
+        ctx.shadowColor = '#ff8c22';
+        ctx.shadowBlur  = 5;
+        ctx.font        = 'bold 11px system-ui';
+        ctx.textAlign   = 'left';
+        ctx.fillText(`marks: ${marks.length}`, 8, 18);
+        ctx.shadowBlur  = 0;
+
+        requestAnimationFrame(draw);
+    }
+
+    function getPos(e) {
+        const rect   = cv.getBoundingClientRect();
+        const scaleX = CW / rect.width;
+        const scaleY = CH / rect.height;
+        if (e.touches) {
+            return { x: (e.touches[0].clientX - rect.left)*scaleX, y: (e.touches[0].clientY - rect.top)*scaleY };
+        }
+        return { x: (e.clientX - rect.left)*scaleX, y: (e.clientY - rect.top)*scaleY };
+    }
+
+    function placeMark(e) {
+        e.preventDefault();
+        const p   = getPos(e);
+        const sym = MARK_SYMS[Math.floor(Math.random() * MARK_SYMS.length)];
+        const col = COLS[Math.floor(Math.random() * COLS.length)];
+        const sz  = 18 + Math.random() * 16;
+
+        // Add permanent mark
+        if (marks.length >= 80) marks.shift();
+        marks.push({ x: p.x, y: p.y + sz * 0.3, sym, col, size: sz, a: 0.92 });
+
+        // Burst sparks
+        for (let i = 0; i < 14; i++) {
+            const ang = Math.random() * Math.PI * 2;
+            const spd = Math.random() * 4 + 1;
+            sparks.push({
+                x: p.x, y: p.y,
+                vx: Math.cos(ang) * spd,
+                vy: Math.sin(ang) * spd - 1,
+                r  : Math.random() * 3 + 1,
+                col: COLS[Math.floor(Math.random() * COLS.length)],
+                life: 1
+            });
+        }
+    }
+
+    cv.addEventListener('mousedown',  placeMark);
+    cv.addEventListener('touchstart', placeMark, { passive: false });
+
+    drawBg();
+    // Draw initial hint
+    ctx.textAlign = 'center';
+    ctx.font      = 'italic 15px system-ui';
+    ctx.fillStyle = '#5a3010';
+    ctx.fillText('tap here to leave ur mark 🧡', CW/2, CH/2);
+    ctx.fillStyle   = '#ff8c22';
+    ctx.shadowColor = '#ff8c22';
+    ctx.shadowBlur  = 5;
+    ctx.font        = 'bold 11px system-ui';
+    ctx.textAlign   = 'left';
+    ctx.fillText(`marks: 0`, 8, 18);
+    ctx.shadowBlur  = 0;
+
+    requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>
