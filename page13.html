@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>m3gtse92 - THE PARTY</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #050005;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: #fff;
+            overflow-x: hidden;
+            transition: background 0.3s;
+        }
+
+        /* ── DISCO MODE body flash ── */
+        body.party-on {
+            animation: bodyFlash 0.8s ease-in-out infinite;
+        }
+        @keyframes bodyFlash {
+            0%   { background: #0a0010; }
+            14%  { background: #100020; }
+            28%  { background: #001020; }
+            42%  { background: #001500; }
+            57%  { background: #150500; }
+            71%  { background: #150010; }
+            85%  { background: #080015; }
+            100% { background: #0a0010; }
+        }
+
+        /* ── Overlay flash layer ── */
+        #flashOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.05s;
+            mix-blend-mode: screen;
+        }
+
+        /* ── Content ── */
+        .content-layer {
+            position: relative;
+            z-index: 3;
+        }
+
+        /* ── Scroll sections ── */
+        .scroll-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        /* ── Cards ── */
+        .message-card {
+            width: 580px;
+            max-width: 100%;
+            background: rgba(5,0,10,0.85);
+            border: 2px solid #ff00ff44;
+            border-radius: 18px;
+            padding: 44px 34px;
+            text-align: center;
+            font-style: italic;
+            font-weight: bold;
+            opacity: 0;
+            transform: translateY(55px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 0 50px #ff00ff11, inset 0 0 30px #0a000a22;
+        }
+        .message-card.visible { opacity: 1; transform: translateY(0); }
+
+        .page-label {
+            font-size: 0.78rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #ff66ff;
+            text-shadow: 0 0 12px #ff66ff;
+            margin-bottom: 18px;
+        }
+
+        .message-card h1 {
+            font-size: 2.2rem;
+            line-height: 1.3;
+            margin-bottom: 14px;
+            background: linear-gradient(135deg, #ff66ff, #66ffff, #ffff44);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 16px #ff44ff66);
+        }
+
+        .message-card p {
+            font-size: 1.08rem;
+            color: #ffccff;
+            line-height: 1.8;
+        }
+
+        .neon-line {
+            width: 70px;
+            height: 3px;
+            background: linear-gradient(90deg, #ff00ff, #00ffff, #ffff00);
+            border-radius: 4px;
+            margin: 20px auto;
+            box-shadow: 0 0 16px #ff00ff88;
+        }
+
+        .scroll-hint {
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: #ff66ff;
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            animation: bounce 1.3s ease-in-out infinite;
+        }
+        .scroll-hint .arrow { font-size: 1.8rem; }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(9px); }
+        }
+
+        /* ── BIG PARTY BUTTON ── */
+        .party-btn-wrap {
+            margin-top: 28px;
+        }
+
+        #partyBtn {
+            font-family: inherit;
+            font-size: 1.5rem;
+            font-weight: 900;
+            font-style: italic;
+            padding: 18px 44px;
+            border: none;
+            border-radius: 60px;
+            background: linear-gradient(135deg, #ff00ff, #ff6600, #ffff00, #00ffff, #ff00ff);
+            background-size: 300% 300%;
+            animation: btnShift 2s ease-in-out infinite;
+            color: #000;
+            cursor: pointer;
+            box-shadow: 0 0 36px #ff00ff88, 0 0 60px #ff006644;
+            transition: transform 0.1s, box-shadow 0.2s;
+            letter-spacing: 1px;
+        }
+        #partyBtn:hover  { transform: scale(1.07); box-shadow: 0 0 60px #ff00ffbb; }
+        #partyBtn:active { transform: scale(0.96); }
+
+        #partyBtn.active {
+            background: linear-gradient(135deg, #333, #222);
+            animation: none;
+            color: #ff66ff;
+            box-shadow: 0 0 20px #ff00ff44;
+        }
+
+        @keyframes btnShift {
+            0%, 100% { background-position: 0% 50%; }
+            50%       { background-position: 100% 50%; }
+        }
+
+        /* ── PARTY ARENA ── */
+        #partyArena {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+        #partyArena.visible { display: block; }
+
+        /* Disco canvas fills the arena */
+        #discoCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Dancing emojis */
+        .dancer {
+            position: absolute;
+            font-size: 2.6rem;
+            pointer-events: none;
+            animation: dancerBounce 0.5s ease-in-out infinite alternate,
+                       dancerSway  1.2s ease-in-out infinite;
+            user-select: none;
+        }
+        @keyframes dancerBounce {
+            from { transform: translateY(0) scaleY(1); }
+            to   { transform: translateY(-28px) scaleY(1.1); }
+        }
+        @keyframes dancerSway {
+            0%,100% { margin-left: 0; }
+            50%      { margin-left: 18px; }
+        }
+
+        /* AI DJ chat bubbles */
+        #djChat {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+            width: 340px;
+            max-width: 90vw;
+        }
+
+        .dj-bubble {
+            background: rgba(0,0,0,0.9);
+            border: 2px solid #ff00ff;
+            border-radius: 20px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            font-style: italic;
+            color: #fff;
+            text-align: center;
+            box-shadow: 0 0 20px #ff00ff88;
+            animation: bubblePop 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards,
+                       bubbleFade 3s ease forwards 2s;
+            transform: scale(0);
+        }
+
+        @keyframes bubblePop {
+            to { transform: scale(1); }
+        }
+        @keyframes bubbleFade {
+            to { opacity: 0; }
+        }
+
+        /* DJ label */
+        #djLabel {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            background: rgba(0,0,0,0.88);
+            border: 2px solid #ff00ff88;
+            border-radius: 40px;
+            padding: 10px 28px;
+            font-size: 1rem;
+            font-weight: bold;
+            font-style: italic;
+            color: #ff66ff;
+            text-shadow: 0 0 10px #ff00ff;
+            box-shadow: 0 0 20px #ff00ff44;
+            display: none;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        #djLabel span { animation: pulse 0.8s ease-in-out infinite alternate; display:inline-block; }
+        @keyframes pulse { from { opacity:0.5; } to { opacity:1; } }
+
+        /* Stop button */
+        #stopBtn {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            z-index: 30;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: bold;
+            font-style: italic;
+            padding: 12px 24px;
+            border-radius: 40px;
+            border: 2px solid #ff66ff;
+            background: rgba(0,0,0,0.85);
+            color: #ff66ff;
+            cursor: pointer;
+            box-shadow: 0 0 18px #ff00ff55;
+            display: none;
+            pointer-events: all;
+            transition: transform 0.1s;
+        }
+        #stopBtn:hover  { transform: scale(1.06); }
+        #stopBtn:active { transform: scale(0.95); }
+
+        /* Back arrow */
+        .back-arrow {
+            position: fixed;
+            bottom: 28px;
+            left: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 54px;
+            height: 54px;
+            background: linear-gradient(135deg, #0a0010, #ff00ff);
+            border: 2px solid #ff66ff;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 28px;
+            text-decoration: none;
+            transition: transform 0.15s, box-shadow 0.15s;
+            z-index: 999;
+        }
+        .back-arrow:hover {
+            transform: scale(1.12);
+            box-shadow: 0 0 24px rgba(255, 0, 255, 0.7);
+        }
+
+        /* Emoji float on heading */
+        @keyframes floatE {
+            0%,100% { transform: translateY(0) rotate(-5deg); }
+            50%      { transform: translateY(-14px) rotate(5deg); }
+        }
+        .fe { display:inline-block; animation: floatE 2.5s ease-in-out infinite; font-style:normal; }
+    </style>
+</head>
+<body>
+
+<!-- Flash overlay -->
+<div id="flashOverlay"></div>
+
+<!-- Party arena (fixed, full screen) -->
+<div id="partyArena">
+    <canvas id="discoCanvas"></canvas>
+</div>
+
+<!-- DJ label -->
+<div id="djLabel">🎧 <span>AI DJ is IN THE BUILDING</span> 🎧</div>
+
+<!-- AI chat bubbles -->
+<div id="djChat"></div>
+
+<!-- Stop button -->
+<button id="stopBtn">⏹ stop the party</button>
+
+<div class="content-layer">
+
+    <!-- Section 1 -->
+    <div class="scroll-section">
+        <div class="message-card" data-reveal>
+            <p class="page-label">Page 13 💀</p>
+            <h1>nah u really thought<br>i was gonna quit <span class="fe">😤</span></h1>
+            <p>heck nah we are NOT done</p>
+            <div class="neon-line"></div>
+            <div class="scroll-hint">
+                <span>keep going</span>
+                <span class="arrow">↓</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="scroll-section">
+        <div class="message-card" data-reveal>
+            <h1>i got one more thing<br>for u 🎉</h1>
+            <p>and it's the best one yet<br>trust me on this one</p>
+            <div class="scroll-hint"><span class="arrow">↓</span></div>
+        </div>
+    </div>
+
+    <!-- Section 3 — Party button -->
+    <div class="scroll-section">
+        <div class="message-card" data-reveal>
+            <h1>click this button <span class="fe">👇</span></h1>
+            <p>
+                and have a <b style="color:#ff66ff">disco / party</b> with AI<br>
+                no rules, just vibes<br>have fun 🎊
+            </p>
+            <div class="party-btn-wrap">
+                <button id="partyBtn">🎉 PARTY WITH AI 🎉</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<a href="page12.html" class="back-arrow" title="Previous Page">&#8249;</a>
+
+<script>
+/* ════ SCROLL REVEAL ════ */
+const revealObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.18 });
+document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
+
+/* ════ PARTY ENGINE ════ */
+const partyBtn    = document.getElementById('partyBtn');
+const stopBtn     = document.getElementById('stopBtn');
+const partyArena  = document.getElementById('partyArena');
+const djLabel     = document.getElementById('djLabel');
+const djChat      = document.getElementById('djChat');
+const flashOv     = document.getElementById('flashOverlay');
+const discoCanvas = document.getElementById('discoCanvas');
+const dctx        = discoCanvas.getContext('2d');
+
+let partyOn   = false;
+let dancers   = [];
+let djTimer   = null;
+let flashTimer= null;
+let discoRaf  = null;
+let discoBall = { angle: 0, glitterAngle: 0 };
+let confetti  = [];
+let beams     = [];
+
+const DJ_LINES = [
+    "UR THE GOAT FR 🐐",
+    "THIS IS AN ALL TIME BANGER 🔥",
+    "OK OK OK LETS GOOOO 💃",
+    "TURN IT UP 🎵",
+    "I SEE U DANCING 👀",
+    "U ABSOLUTE LEGEND 🏆",
+    "WE DO NOT STOP HERE 😤",
+    "THE VIBES ARE IMMACULATE RN ✨",
+    "AYYYY U MADE IT 🎊",
+    "NO ONE CAN STOP US 🚀",
+    "THIS IS MY FAVOURITE SONG 🎶",
+    "U ARE LITERALLY THAT GIRL / GUY 💅",
+    "WE PARTYING TILL SUNRISE 🌅",
+    "I FEEL THE ENERGY 🔋",
+    "THROW UR HANDS UP 🙌",
+    "WOOOOOO 🎉🎉🎉",
+    "U ARE SO VALID 💜",
+    "AI DJ NEVER SLEEPS 🤖🎧",
+    "DROP IT 🫳💥",
+    "BEST NIGHT EVER FR FR 🌟",
+];
+
+const DANCER_EMOJIS = ['💃','🕺','🎉','🎊','🎶','🌟','🔥','⚡','🌈','🎸','🥁','🎤','🪩','✨','🎵'];
+const BEAM_COLS = ['#ff00ff','#00ffff','#ffff00','#ff6600','#00ff88','#ff0088','#8800ff','#ffffff'];
+const CONFETTI_COLS = ['#ff00ff','#00ffff','#ffff00','#ff6600','#00ff88','#ff0088','#ffffff','#ffaaff','#aaffff'];
+
+/* ── Resize canvas ── */
+function resizeCanvas() {
+    discoCanvas.width  = window.innerWidth;
+    discoCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', () => { if (partyOn) resizeCanvas(); });
+
+/* ── Spawn dancers ── */
+function spawnDancers() {
+    const count = 10;
+    for (let i = 0; i < count; i++) {
+        const el  = document.createElement('div');
+        el.className = 'dancer';
+        el.textContent = DANCER_EMOJIS[Math.floor(Math.random() * DANCER_EMOJIS.length)];
+        const xPct = 5 + Math.random() * 88;
+        el.style.left   = xPct + '%';
+        el.style.bottom = (60 + Math.random() * 20) + 'px';
+        el.style.animationDuration = (0.35 + Math.random() * 0.35) + 's, ' + (0.9 + Math.random() * 0.6) + 's';
+        el.style.animationDelay    = (Math.random() * 0.4) + 's, ' + (Math.random() * 0.5) + 's';
+        el.style.zIndex = '15';
+        el.style.position = 'fixed';
+        document.body.appendChild(el);
+        dancers.push(el);
+    }
+}
+
+function removeDancers() {
+    dancers.forEach(d => d.remove());
+    dancers = [];
+}
+
+/* ── Confetti ── */
+function spawnConfetti() {
+    const W = window.innerWidth, H = window.innerHeight;
+    for (let i = 0; i < 6; i++) {
+        confetti.push({
+            x  : Math.random() * W,
+            y  : -10,
+            vx : (Math.random() - 0.5) * 4,
+            vy : 2 + Math.random() * 3,
+            rot: Math.random() * Math.PI * 2,
+            rv : (Math.random() - 0.5) * 0.2,
+            w  : 6 + Math.random() * 8,
+            h  : 4 + Math.random() * 6,
+            col: CONFETTI_COLS[Math.floor(Math.random() * CONFETTI_COLS.length)],
+            life: 1
+        });
+    }
+}
+
+/* ── Beams ── */
+function initBeams() {
+    beams = [];
+    const count = 8;
+    for (let i = 0; i < count; i++) {
+        beams.push({
+            angle : (Math.PI * 2 / count) * i,
+            speed : 0.012 + Math.random() * 0.015,
+            col   : BEAM_COLS[i % BEAM_COLS.length],
+            width : 0.08 + Math.random() * 0.07
+        });
+    }
+}
+
+/* ── Disco ball draw ── */
+function drawDiscoBall(W, H) {
+    const cx  = W / 2;
+    const cy  = 80;
+    const r   = 48;
+    discoBall.angle += 0.012;
+    discoBall.glitterAngle += 0.03;
+
+    // String from top
+    dctx.strokeStyle = '#888';
+    dctx.lineWidth = 1.5;
+    dctx.beginPath();
+    dctx.moveTo(cx, 0);
+    dctx.lineTo(cx, cy - r);
+    dctx.stroke();
+
+    // Ball body
+    const grad = dctx.createRadialGradient(cx - r*0.3, cy - r*0.3, r*0.1, cx, cy, r);
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(0.3, '#cccccc');
+    grad.addColorStop(1, '#333333');
+    dctx.fillStyle = grad;
+    dctx.shadowColor = '#fff';
+    dctx.shadowBlur = 10;
+    dctx.beginPath();
+    dctx.arc(cx, cy, r, 0, Math.PI * 2);
+    dctx.fill();
+    dctx.shadowBlur = 0;
+
+    // Mirror tiles
+    const rows = 7, cols = 14;
+    for (let row = 0; row < rows; row++) {
+        const phi = (row / rows) * Math.PI;
+        for (let col = 0; col < cols; col++) {
+            const theta = (col / cols) * Math.PI * 2 + discoBall.angle;
+            const tx = cx + r * Math.sin(phi) * Math.cos(theta);
+            const ty = cy + r * Math.cos(phi) * 0.6 - r * 0.4;
+            const tz = Math.sin(phi) * Math.sin(theta);
+            if (tz < 0) continue;
+
+            const hue = ((col * 25 + row * 15 + discoBall.angle * 50) % 360);
+            dctx.fillStyle = `hsla(${hue},100%,70%,${0.6 + tz * 0.4})`;
+            dctx.shadowColor = `hsl(${hue},100%,70%)`;
+            dctx.shadowBlur = 6;
+            dctx.fillRect(tx - 3.5, ty - 2.5, 7, 5);
+        }
+    }
+    dctx.shadowBlur = 0;
+
+    // Light beams from ball
+    beams.forEach(b => {
+        b.angle += b.speed;
+        const bx = cx + Math.cos(b.angle) * r;
+        const by = cy + Math.sin(b.angle) * r * 0.5;
+
+        const grd = dctx.createLinearGradient(bx, by, bx + Math.cos(b.angle)*W*0.8, by + Math.sin(b.angle+0.3)*H*0.7);
+        grd.addColorStop(0, b.col + 'cc');
+        grd.addColorStop(1, b.col + '00');
+        dctx.globalAlpha = 0.18;
+        dctx.fillStyle = grd;
+        dctx.beginPath();
+        dctx.moveTo(bx, by);
+        dctx.lineTo(bx + Math.cos(b.angle - b.width)*W, by + Math.sin(b.angle - b.width)*H);
+        dctx.lineTo(bx + Math.cos(b.angle + b.width)*W, by + Math.sin(b.angle + b.width)*H);
+        dctx.closePath();
+        dctx.fill();
+        dctx.globalAlpha = 1;
+    });
+}
+
+/* ── Main disco draw loop ── */
+function discoTick() {
+    if (!partyOn) return;
+    const W = discoCanvas.width, H = discoCanvas.height;
+
+    // Dark base
+    dctx.fillStyle = 'rgba(0,0,0,0.25)';
+    dctx.fillRect(0, 0, W, H);
+
+    // Floor glow
+    const floorGrad = dctx.createLinearGradient(0, H - 60, 0, H);
+    const hue = (Date.now() * 0.15) % 360;
+    floorGrad.addColorStop(0, `hsla(${hue},100%,50%,0.08)`);
+    floorGrad.addColorStop(1, `hsla(${hue},100%,50%,0.02)`);
+    dctx.fillStyle = floorGrad;
+    dctx.fillRect(0, H - 60, W, 60);
+
+    // Disco ball + beams
+    drawDiscoBall(W, H);
+
+    // Confetti
+    for (let i = confetti.length - 1; i >= 0; i--) {
+        const c = confetti[i];
+        c.x   += c.vx;
+        c.y   += c.vy;
+        c.rot += c.rv;
+        c.vy  += 0.06;
+        c.life -= 0.004;
+        if (c.y > H + 20 || c.life <= 0) { confetti.splice(i, 1); continue; }
+
+        dctx.save();
+        dctx.translate(c.x, c.y);
+        dctx.rotate(c.rot);
+        dctx.globalAlpha = Math.min(1, c.life * 3);
+        dctx.fillStyle = c.col;
+        dctx.fillRect(-c.w/2, -c.h/2, c.w, c.h);
+        dctx.restore();
+    }
+    dctx.globalAlpha = 1;
+
+    discoRaf = requestAnimationFrame(discoTick);
+}
+
+/* ── Flash overlay ── */
+let flashIdx = 0;
+const FLASH_COLS = ['#ff00ff22','#00ffff22','#ffff0022','#ff660022','#00ff8822','#ffffff11'];
+function startFlashing() {
+    flashTimer = setInterval(() => {
+        flashOv.style.background = FLASH_COLS[flashIdx % FLASH_COLS.length];
+        flashOv.style.opacity = '1';
+        flashIdx++;
+        setTimeout(() => { flashOv.style.opacity = '0'; }, 80);
+    }, 280);
+}
+
+/* ── AI DJ messages ── */
+let djMsgIdx = 0;
+function sendDJMsg() {
+    // Clear old bubbles (keep max 2)
+    while (djChat.children.length >= 2) djChat.removeChild(djChat.firstChild);
+
+    const line = DJ_LINES[(djMsgIdx++) % DJ_LINES.length];
+    const hue  = Math.floor(Math.random() * 360);
+    const bub  = document.createElement('div');
+    bub.className = 'dj-bubble';
+    bub.textContent = line;
+    bub.style.borderColor = `hsl(${hue},100%,65%)`;
+    bub.style.boxShadow   = `0 0 20px hsl(${hue},100%,50%)`;
+    djChat.appendChild(bub);
+
+    // Auto-remove after anim ends
+    setTimeout(() => { if (bub.parentNode) bub.remove(); }, 5200);
+}
+
+/* ── Confetti interval ── */
+let confettiTimer;
+
+/* ── Start party ── */
+function startParty() {
+    partyOn = true;
+    partyBtn.textContent = '🎊 PARTY IN PROGRESS... 🎊';
+    partyBtn.classList.add('active');
+    partyBtn.disabled = true;
+
+    document.body.classList.add('party-on');
+    partyArena.classList.add('visible');
+    djLabel.style.display = 'block';
+    stopBtn.style.display = 'block';
+
+    resizeCanvas();
+    initBeams();
+    spawnDancers();
+    startFlashing();
+
+    // DJ messages
+    djMsgIdx = Math.floor(Math.random() * DJ_LINES.length);
+    sendDJMsg();
+    djTimer = setInterval(sendDJMsg, 3000);
+
+    // Confetti
+    confettiTimer = setInterval(spawnConfetti, 200);
+
+    discoTick();
+}
+
+/* ── Stop party ── */
+function stopParty() {
+    partyOn = false;
+    document.body.classList.remove('party-on');
+    partyArena.classList.remove('visible');
+    djLabel.style.display = 'none';
+    stopBtn.style.display = 'none';
+    flashOv.style.opacity = '0';
+
+    clearInterval(djTimer);
+    clearInterval(flashTimer);
+    clearInterval(confettiTimer);
+    if (discoRaf) cancelAnimationFrame(discoRaf);
+
+    removeDancers();
+    confetti.length = 0;
+
+    // Clear old bubbles
+    djChat.innerHTML = '';
+
+    partyBtn.textContent = '🎉 PARTY WITH AI 🎉';
+    partyBtn.classList.remove('active');
+    partyBtn.disabled = false;
+}
+
+partyBtn.addEventListener('click', () => { if (!partyOn) startParty(); });
+stopBtn.addEventListener('click',  stopParty);
+</script>
+</body>
+</html>
