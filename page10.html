@@ -37,10 +37,7 @@
             transition: opacity 0.75s ease, transform 0.75s ease;
         }
 
-        .message-card.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        .message-card.visible { opacity: 1; transform: translateY(0); }
 
         .page-label {
             font-size: 0.85rem;
@@ -86,7 +83,6 @@
             50%       { transform: translateY(8px); }
         }
 
-        /* ── Game card ── */
         .game-card { width: 600px; }
 
         #gameCanvas {
@@ -97,7 +93,7 @@
             border-radius: 8px;
             border: 2px solid #00ff6a55;
             cursor: pointer;
-            touch-action: none;   /* kills 300ms tap delay */
+            touch-action: none;
             -webkit-tap-highlight-color: transparent;
             image-rendering: crisp-edges;
         }
@@ -123,7 +119,7 @@
 
         .back-arrow:hover {
             transform: scale(1.1);
-            box-shadow: 0 0 20px rgba(0,255,106,0.6);
+            box-shadow: 0 0 20px rgba(0, 255, 106, 0.6);
         }
     </style>
 </head>
@@ -159,376 +155,537 @@
         </div>
     </div>
 
-    <!-- ── Section 4 : THE GAME ── -->
+    <!-- ── Section 4 : GAME ── -->
     <div class="scroll-section">
         <div class="message-card game-card" data-reveal>
             <h1>so check out ts game 🎮</h1>
-            <p>tap / click / space to jump &nbsp;—&nbsp; don't die 💀</p>
-            <!-- internal 560×180, CSS scales it to fill the card -->
-            <canvas id="gameCanvas" width="560" height="180"></canvas>
+            <p>
+                <b style="color:#00ff6a">CUBE</b> — tap/space to jump &nbsp;|&nbsp;
+                <b style="color:#00ff6a">BALL</b> — tap to flip gravity &nbsp;|&nbsp;
+                <b style="color:#00ff6a">WAVE</b> — hold to go up
+            </p>
+            <canvas id="gameCanvas" width="560" height="190"></canvas>
         </div>
     </div>
 
     <a href="page9.html" class="back-arrow" title="Previous Page">&#8249;</a>
 
-    <script>
-    /* ═══════════════════════════════════════════════
-       SCROLL REVEAL
-    ═══════════════════════════════════════════════ */
-    const revealObserver = new IntersectionObserver(entries => {
-        entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-    }, { threshold: 0.25 });
-    document.querySelectorAll('[data-reveal]').forEach(el => revealObserver.observe(el));
+<script>
+/* ════════════════════════════════════════════════
+   SCROLL REVEAL
+════════════════════════════════════════════════ */
+const revealObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.25 });
+document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
 
-    /* ═══════════════════════════════════════════════
-       GEOMETRY DASH — CLONE
-    ═══════════════════════════════════════════════ */
-    const canvas  = document.getElementById('gameCanvas');
-    const ctx     = canvas.getContext('2d');
+/* ════════════════════════════════════════════════
+   GAME — GEOMETRY DASH CLONE (CUBE → BALL → WAVE)
+════════════════════════════════════════════════ */
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
 
-    // Fixed internal resolution
-    const W  = 560;
-    const H  = 180;
-    const GY = 142;   // ground y (top of ground strip)
-    const PS = 34;    // player size
-    const G  = 0.68;  // gravity per frame
-    const JV = -11.2; // jump velocity
+const W  = 560;   // canvas internal width
+const H  = 190;   // canvas internal height
+const GY = 150;   // ground Y (top of ground strip)
+const PS = 34;    // player size
 
-    const NEON   = '#00ff6a';
-    const NEON_D = '#005530';
-    const NEON_M = '#00cc55';
+// Physics constants
+const CUBE_G  = 0.68;   const CUBE_JV = -11.2;
+const BALL_G  = 0.55;   // gravity magnitude for ball (flips direction)
+const WAVE_SP = 3.8;    // wave diagonal speed (px per frame)
 
-    let player, obstacles, particles, score, speed, running, rafId, bgX, nextObsDist;
+// Colours
+const NEON   = '#00ff6a';
+const NEON_D = '#004d28';
+const NEON_M = '#00cc55';
+const RED    = '#ff4444';
 
-    /* ── Init / restart ── */
-    function startGame() {
-        player = { x: 100, y: GY - PS, vy: 0, onGround: true, rot: 0 };
-        obstacles  = [];
-        particles  = [];
-        score      = 0;
-        speed      = 5;
-        bgX        = 0;
-        running    = true;
-        nextObsDist = 380;
-        if (rafId) cancelAnimationFrame(rafId);
-        rafId = requestAnimationFrame(tick);
-    }
+// ── Game state ──
+let player, obstacles, particles, score, speed, running, rafId;
+let bgX, nextObsDist;
+let gameMode;           // 'cube' | 'ball' | 'wave'
+let nextModeScore;
+let ballGravDir;        // 1 = down, -1 = up
+let holding;            // true while mouse/touch/key held (wave)
+let modeFlash;          // { text, life } mode-change overlay
 
-    /* ── Jump (with no-delay input) ── */
-    function doJump() {
-        if (!running) { startGame(); return; }
+/* ─── Start / Restart ─── */
+function startGame() {
+    player       = { x: 100, y: GY - PS, vy: 0, onGround: true, rot: 0 };
+    obstacles    = [];
+    particles    = [];
+    score        = 0;
+    speed        = 5;
+    bgX          = 0;
+    running      = true;
+    nextObsDist  = 400;
+    gameMode     = 'cube';
+    nextModeScore = 220;
+    ballGravDir  = 1;
+    holding      = false;
+    modeFlash    = null;
+
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(tick);
+}
+
+/* ─── Input (zero-delay) ─── */
+function pressDown() {
+    if (!running) { startGame(); return; }
+    holding = true;
+    if (gameMode === 'cube') {
         if (player.onGround) {
-            player.vy = JV;
+            player.vy = CUBE_JV;
             player.onGround = false;
-            // dust particles at feet
-            for (let i = 0; i < 7; i++) addParticle(
-                player.x + PS / 2, GY,
-                (Math.random() - 0.5) * 3.5, Math.random() * -2 - 0.5,
-                Math.random() * 3 + 1
-            );
+            spawnDust(player.x + PS / 2, GY);
+        }
+    } else if (gameMode === 'ball') {
+        ballGravDir *= -1;
+        spawnDust(player.x + PS / 2, player.y + (ballGravDir === -1 ? 0 : PS));
+    }
+    // wave: just sets holding = true (handled in updateWave)
+}
+function pressUp() { holding = false; }
+
+canvas.addEventListener('mousedown',    e => { e.preventDefault(); pressDown(); });
+canvas.addEventListener('mouseup',      () => pressUp());
+canvas.addEventListener('touchstart',   e => { e.preventDefault(); pressDown(); }, { passive: false });
+canvas.addEventListener('touchend',     () => pressUp());
+canvas.addEventListener('touchcancel',  () => pressUp());
+document.addEventListener('keydown', e => {
+    if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); pressDown(); }
+});
+document.addEventListener('keyup', e => {
+    if (e.code === 'Space' || e.code === 'ArrowUp') pressUp();
+});
+
+/* ─── Particles ─── */
+function spawnDust(x, y) {
+    for (let i = 0; i < 7; i++)
+        particles.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 4,
+            vy: Math.random() * -2.5 - 0.3,
+            life: 1,
+            size: Math.random() * 3.5 + 1
+        });
+}
+function spawnBurst(x, y) {
+    for (let i = 0; i < 20; i++)
+        particles.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 10,
+            vy: Math.random() * -8 - 1,
+            life: 1,
+            size: Math.random() * 5 + 2
+        });
+}
+
+/* ─── Mode switch ─── */
+const MODE_CYCLE  = ['cube', 'ball', 'wave'];
+const MODE_LABELS = { cube: '⬜ CUBE MODE', ball: '⭕ BALL MODE', wave: '◆ WAVE MODE' };
+
+function switchMode() {
+    const idx  = MODE_CYCLE.indexOf(gameMode);
+    gameMode   = MODE_CYCLE[(idx + 1) % 3];
+    nextModeScore = score + 220;
+    obstacles  = [];   // clear level
+    holding    = false;
+
+    if (gameMode === 'cube') {
+        player.y  = GY - PS;
+        player.vy = 0;
+        player.onGround = true;
+    } else if (gameMode === 'ball') {
+        ballGravDir = 1;
+        player.vy   = 0;
+        // keep current y
+    } else if (gameMode === 'wave') {
+        player.y  = GY / 2 - PS / 2;   // centre
+        player.vy = 0;
+    }
+
+    modeFlash = { text: MODE_LABELS[gameMode], life: 2.2 };
+}
+
+/* ─── Obstacle spawning ─── */
+const CUBE_OBS  = ['spike','spike','spike','dspike','block','tall'];
+const BALL_OBS  = ['floor_spike','floor_spike','ceil_spike','ceil_spike','floor_dspike','ceil_dspike'];
+const WAVE_OBS  = ['floor_spike','ceil_spike','floor_spike','ceil_spike','floor_dspike'];
+
+function spawnObs() {
+    let pool;
+    if (gameMode === 'cube')  pool = CUBE_OBS;
+    if (gameMode === 'ball')  pool = BALL_OBS;
+    if (gameMode === 'wave')  pool = WAVE_OBS;
+    const t = pool[Math.floor(Math.random() * pool.length)];
+    obstacles.push({ x: W + 24, type: t });
+}
+
+/* ─── Hitboxes ─── */
+function getHitboxes(o) {
+    switch (o.type) {
+        case 'spike':
+        case 'floor_spike':   return [{ x: o.x + 3,  y: GY - 34, w: 22, h: 34 }];
+        case 'dspike':
+        case 'floor_dspike':  return [
+            { x: o.x + 3,  y: GY - 34, w: 22, h: 34 },
+            { x: o.x + 31, y: GY - 34, w: 22, h: 34 }
+        ];
+        case 'ceil_spike':    return [{ x: o.x + 3,  y: 0, w: 22, h: 34 }];
+        case 'ceil_dspike':   return [
+            { x: o.x + 3,  y: 0, w: 22, h: 34 },
+            { x: o.x + 31, y: 0, w: 22, h: 34 }
+        ];
+        case 'block':  return [{ x: o.x, y: GY - 46, w: 40, h: 46 }];
+        case 'tall':   return [{ x: o.x, y: GY - 62, w: 40, h: 62 }];
+    }
+    return [];
+}
+
+function playerHit() {
+    const px = player.x + 6, py = player.y + 6, pw = PS - 12, ph = PS - 12;
+    for (const o of obstacles) {
+        for (const hb of getHitboxes(o)) {
+            if (px < hb.x + hb.w && px + pw > hb.x &&
+                py < hb.y + hb.h && py + ph > hb.y) return true;
         }
     }
+    return false;
+}
 
-    // mousedown — no delay
-    canvas.addEventListener('mousedown', e => { e.preventDefault(); doJump(); });
-    // touchstart — no 300ms delay (passive:false + preventDefault)
-    canvas.addEventListener('touchstart', e => { e.preventDefault(); doJump(); }, { passive: false });
-    // keyboard
-    document.addEventListener('keydown', e => {
-        if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); doJump(); }
-    });
+/* ─── Die ─── */
+function die() {
+    running = false;
+    spawnBurst(player.x + PS / 2, player.y + PS / 2);
+    (function deathLoop() {
+        ctx.clearRect(0, 0, W, H);
+        drawBg(); tickParticles(); drawParticles(); drawGround();
+        ctx.textAlign  = 'center';
+        ctx.font       = 'bold italic 22px system-ui';
+        ctx.fillStyle  = RED;
+        ctx.shadowColor = RED; ctx.shadowBlur = 18;
+        ctx.fillText('💀  tap to restart', W / 2, H / 2 - 4);
+        ctx.font       = 'italic 13px system-ui';
+        ctx.fillStyle  = '#ffaaaa';
+        ctx.shadowBlur = 0;
+        ctx.fillText('score: ' + Math.floor(score), W / 2, H / 2 + 17);
+        if (particles.length > 0) requestAnimationFrame(deathLoop);
+    })();
+}
 
-    /* ── Particles ── */
-    function addParticle(x, y, vx, vy, size) {
-        particles.push({ x, y, vx, vy, life: 1, size });
+/* ════════════════ MAIN LOOP ════════════════ */
+function tick() {
+    speed += 0.003;
+    score += speed * 0.04;
+    bgX   -= speed * 0.5;
+
+    // Mode transition
+    if (score >= nextModeScore) switchMode();
+
+    // Physics
+    if (gameMode === 'cube')  updateCube();
+    else if (gameMode === 'ball')  updateBall();
+    else if (gameMode === 'wave')  { updateWave(); if (!running) return; }
+
+    // Obstacles
+    nextObsDist -= speed;
+    if (nextObsDist <= 0) {
+        spawnObs();
+        const gap = gameMode === 'wave' ? 160 + Math.random() * 200
+                                        : 260 + Math.random() * 260;
+        nextObsDist = gap;
+    }
+    for (const o of obstacles) o.x -= speed;
+    obstacles = obstacles.filter(o => o.x > -80);
+
+    // Particles
+    tickParticles();
+    particles = particles.filter(p => p.life > 0);
+
+    // Collision
+    if (playerHit()) { die(); return; }
+
+    // Flash countdown
+    if (modeFlash) {
+        modeFlash.life -= 1 / 60;
+        if (modeFlash.life <= 0) modeFlash = null;
     }
 
-    /* ── Obstacle spawner ── */
-    const OBS_TYPES = ['spike', 'spike', 'spike', 'dspike', 'block', 'tall'];
+    drawGame();
+    rafId = requestAnimationFrame(tick);
+}
 
-    function spawnObs() {
-        const t = OBS_TYPES[Math.floor(Math.random() * OBS_TYPES.length)];
-        obstacles.push({ x: W + 20, type: t });
+/* ─── Physics per mode ─── */
+function updateCube() {
+    player.vy += CUBE_G;
+    player.y  += player.vy;
+    if (player.y >= GY - PS) {
+        player.y = GY - PS; player.vy = 0; player.onGround = true;
+    } else {
+        player.onGround = false;
     }
+    player.rot += player.onGround ? 0 : 0.10;
+    if (player.onGround) {
+        const snap = Math.round(player.rot / (Math.PI / 2)) * (Math.PI / 2);
+        player.rot += (snap - player.rot) * 0.3;
+    }
+}
 
-    /* ── Hitboxes ── */
-    function getHitboxes(o) {
+function updateBall() {
+    player.vy += BALL_G * ballGravDir;
+    player.vy  = Math.max(-13, Math.min(13, player.vy));
+    player.y  += player.vy;
+
+    // Floor
+    if (player.y + PS >= GY) {
+        player.y = GY - PS;
+        if (player.vy > 0) player.vy *= -0.15;  // slight bounce
+    }
+    // Ceiling
+    if (player.y <= 0) {
+        player.y = 0;
+        if (player.vy < 0) player.vy *= -0.15;
+    }
+    // Spin
+    player.rot += 0.13;
+}
+
+function updateWave() {
+    player.y += holding ? -WAVE_SP : WAVE_SP;
+    // Boundary = instant death in wave mode
+    if (player.y <= 1 || player.y + PS >= GY - 1) { die(); }
+    // Smooth tilt
+    const target = holding ? -Math.PI / 5 : Math.PI / 5;
+    player.rot += (target - player.rot) * 0.18;
+}
+
+/* ─── Particle tick ─── */
+function tickParticles() {
+    for (const p of particles) {
+        p.x += p.vx; p.y += p.vy;
+        p.vy += 0.2;
+        p.life -= 0.04;
+    }
+}
+
+/* ════════════════ DRAWING ════════════════ */
+function drawBg() {
+    ctx.fillStyle = '#040e08';
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = '#0b2218';
+    ctx.lineWidth = 1;
+    const g = 36, ox = ((bgX % g) + g) % g;
+    for (let x = ox; x < W; x += g) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,GY); ctx.stroke(); }
+    for (let y = 0; y < GY; y += g) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+}
+
+function drawGround() {
+    ctx.fillStyle = '#001208';
+    ctx.fillRect(0, GY, W, H - GY);
+
+    // Ground line glow
+    ctx.strokeStyle = NEON; ctx.shadowColor = NEON; ctx.shadowBlur = 7; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, GY); ctx.lineTo(W, GY); ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Ground tile lines
+    ctx.strokeStyle = '#003318'; ctx.lineWidth = 1;
+    const g = 36, ox = ((bgX % g) + g) % g;
+    for (let x = ox; x < W; x += g) { ctx.beginPath(); ctx.moveTo(x,GY); ctx.lineTo(x,H); ctx.stroke(); }
+
+    // Wave mode: ceiling line
+    if (gameMode === 'wave') {
+        ctx.strokeStyle = NEON; ctx.shadowColor = NEON; ctx.shadowBlur = 7; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0,1); ctx.lineTo(W,1); ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+}
+
+// Obstacle draw helpers
+function drawFloorSpike(x, w, h) {
+    ctx.beginPath();
+    ctx.moveTo(x, GY); ctx.lineTo(x + w/2, GY - h); ctx.lineTo(x + w, GY);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+}
+function drawCeilSpike(x, w, h) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0); ctx.lineTo(x + w/2, h); ctx.lineTo(x + w, 0);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+}
+
+function drawObstacles() {
+    ctx.fillStyle = NEON; ctx.strokeStyle = NEON_M;
+    ctx.lineWidth = 1.5; ctx.shadowColor = NEON; ctx.shadowBlur = 9;
+
+    for (const o of obstacles) {
         switch (o.type) {
-            case 'spike':  return [{ x: o.x + 3, y: GY - 34, w: 22, h: 34 }];
-            case 'dspike': return [
-                { x: o.x + 3,  y: GY - 34, w: 22, h: 34 },
-                { x: o.x + 31, y: GY - 34, w: 22, h: 34 }
-            ];
-            case 'block':  return [{ x: o.x,     y: GY - 44, w: 40, h: 44 }];
-            case 'tall':   return [{ x: o.x,     y: GY - 60, w: 40, h: 60 }];
-        }
-        return [];
-    }
+            case 'spike':
+            case 'floor_spike':
+                drawFloorSpike(o.x, 28, 34); break;
 
-    function playerHit() {
-        const px = player.x + 6, py = player.y + 6, pw = PS - 12, ph = PS - 12;
-        for (const o of obstacles) {
-            for (const hb of getHitboxes(o)) {
-                if (px < hb.x + hb.w && px + pw > hb.x &&
-                    py < hb.y + hb.h && py + ph > hb.y) return true;
+            case 'dspike':
+            case 'floor_dspike':
+                drawFloorSpike(o.x, 28, 34);
+                drawFloorSpike(o.x + 30, 28, 34); break;
+
+            case 'ceil_spike':
+                drawCeilSpike(o.x, 28, 34); break;
+
+            case 'ceil_dspike':
+                drawCeilSpike(o.x, 28, 34);
+                drawCeilSpike(o.x + 30, 28, 34); break;
+
+            case 'block': {
+                const bx = o.x, by = GY - 46, bw = 40, bh = 46;
+                ctx.fillStyle = NEON_D; ctx.fillRect(bx, by, bw, bh);
+                ctx.fillStyle = NEON; ctx.strokeStyle = NEON; ctx.lineWidth = 2;
+                ctx.strokeRect(bx, by, bw, bh);
+                ctx.beginPath();
+                ctx.moveTo(bx+5,by+5); ctx.lineTo(bx+bw-5,by+bh-5);
+                ctx.moveTo(bx+bw-5,by+5); ctx.lineTo(bx+5,by+bh-5);
+                ctx.stroke();
+                ctx.strokeStyle = NEON_M; ctx.lineWidth = 1.5;
+                break;
+            }
+            case 'tall': {
+                const bx = o.x, by = GY - 62, bw = 40, bh = 62;
+                ctx.fillStyle = NEON_D; ctx.fillRect(bx, by, bw, bh);
+                ctx.fillStyle = NEON; ctx.strokeStyle = NEON; ctx.lineWidth = 2;
+                ctx.strokeRect(bx, by, bw, bh);
+                for (let i = 1; i <= 2; i++) {
+                    const ly = by + (bh / 3) * i;
+                    ctx.beginPath(); ctx.moveTo(bx+4,ly); ctx.lineTo(bx+bw-4,ly); ctx.stroke();
+                }
+                ctx.strokeStyle = NEON_M; ctx.lineWidth = 1.5;
+                break;
             }
         }
-        return false;
     }
+    ctx.shadowBlur = 0;
+}
 
-    /* ── Die ── */
-    function die() {
-        running = false;
-        for (let i = 0; i < 18; i++) addParticle(
-            player.x + PS / 2, player.y + PS / 2,
-            (Math.random() - 0.5) * 9, Math.random() * -7 - 1,
-            Math.random() * 5 + 2
-        );
-        (function deathFrame() {
-            ctx.clearRect(0, 0, W, H);
-            drawBg();
-            updateAndDrawParticles();
-            drawGround();
-            // overlay text
-            ctx.textAlign = 'center';
-            ctx.font = 'bold italic 21px system-ui';
-            ctx.fillStyle = '#ff4444';
-            ctx.shadowColor = '#ff4444';
-            ctx.shadowBlur = 18;
-            ctx.fillText('💀  tap to restart', W / 2, H / 2 - 4);
-            ctx.font = 'italic 13px system-ui';
-            ctx.fillStyle = '#ffaaaa';
-            ctx.shadowBlur = 0;
-            ctx.fillText('score: ' + Math.floor(score), W / 2, H / 2 + 16);
-            if (particles.length > 0) requestAnimationFrame(deathFrame);
-        })();
-    }
-
-    /* ══════════════ MAIN LOOP ══════════════ */
-    function tick() {
-        // Speed up
-        speed += 0.003;
-        score += speed * 0.04;
-        bgX  -= speed * 0.5;
-
-        // ── Player physics ──
-        player.vy += G;
-        player.y  += player.vy;
-        if (player.y >= GY - PS) {
-            player.y       = GY - PS;
-            player.vy      = 0;
-            player.onGround = true;
-        } else {
-            player.onGround = false;
-        }
-
-        // Cube rotation
-        if (!player.onGround) {
-            player.rot += 0.10;
-        } else {
-            const snap = Math.round(player.rot / (Math.PI / 2)) * (Math.PI / 2);
-            player.rot += (snap - player.rot) * 0.3;
-        }
-
-        // ── Obstacles ──
-        nextObsDist -= speed;
-        if (nextObsDist <= 0) {
-            spawnObs();
-            nextObsDist = 270 + Math.random() * 280;
-        }
-        for (const o of obstacles) o.x -= speed;
-        obstacles = obstacles.filter(o => o.x > -80);
-
-        // ── Particles ──
-        for (const p of particles) {
-            p.x += p.vx;
-            p.y += p.vy;
-            p.vy += 0.18;
-            p.life -= 0.04;
-        }
-        particles = particles.filter(p => p.life > 0);
-
-        // ── Collision ──
-        if (playerHit()) { die(); return; }
-
-        // ── Draw ──
-        drawGame();
-        rafId = requestAnimationFrame(tick);
-    }
-
-    /* ═══════════════ DRAWING ═══════════════ */
-    function drawBg() {
-        ctx.fillStyle = '#040e08';
-        ctx.fillRect(0, 0, W, H);
-
-        // moving grid
-        ctx.strokeStyle = '#0b2218';
-        ctx.lineWidth = 1;
-        const g  = 36;
-        const ox = ((bgX % g) + g) % g;
-        for (let x = ox; x < W; x += g) {
-            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, GY); ctx.stroke();
-        }
-        for (let y = 0; y < GY; y += g) {
-            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-        }
-    }
-
-    function drawGround() {
-        // fill below ground
-        ctx.fillStyle = '#001208';
-        ctx.fillRect(0, GY, W, H - GY);
-
-        // glowing ground line
-        ctx.strokeStyle = NEON;
-        ctx.shadowColor  = NEON;
-        ctx.shadowBlur   = 7;
-        ctx.lineWidth    = 2;
-        ctx.beginPath(); ctx.moveTo(0, GY); ctx.lineTo(W, GY); ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // tile dividers
-        ctx.strokeStyle = '#003318';
-        ctx.lineWidth   = 1;
-        const g  = 36;
-        const ox = ((bgX % g) + g) % g;
-        for (let x = ox; x < W; x += g) {
-            ctx.beginPath(); ctx.moveTo(x, GY); ctx.lineTo(x, H); ctx.stroke();
-        }
-    }
-
-    function drawSpike(x, w, h) {
-        ctx.beginPath();
-        ctx.moveTo(x,          GY);
-        ctx.lineTo(x + w / 2,  GY - h);
-        ctx.lineTo(x + w,      GY);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-    }
-
-    function drawObstacles() {
+function drawParticles() {
+    for (const p of particles) {
+        ctx.globalAlpha = Math.max(0, p.life);
         ctx.fillStyle   = NEON;
-        ctx.strokeStyle = NEON_M;
-        ctx.lineWidth   = 1.5;
-        ctx.shadowColor = NEON;
-        ctx.shadowBlur  = 9;
-
-        for (const o of obstacles) {
-            switch (o.type) {
-                case 'spike':
-                    drawSpike(o.x, 28, 34);
-                    break;
-                case 'dspike':
-                    drawSpike(o.x,      28, 34);
-                    drawSpike(o.x + 30, 28, 34);
-                    break;
-                case 'block': {
-                    const bx = o.x, by = GY - 44, bw = 40, bh = 44;
-                    ctx.fillStyle = NEON_D;
-                    ctx.fillRect(bx, by, bw, bh);
-                    ctx.fillStyle   = NEON;
-                    ctx.strokeStyle = NEON;
-                    ctx.lineWidth   = 2;
-                    ctx.strokeRect(bx, by, bw, bh);
-                    ctx.beginPath();
-                    ctx.moveTo(bx + 5, by + 5); ctx.lineTo(bx + bw - 5, by + bh - 5);
-                    ctx.moveTo(bx + bw - 5, by + 5); ctx.lineTo(bx + 5, by + bh - 5);
-                    ctx.stroke();
-                    ctx.strokeStyle = NEON_M;
-                    ctx.lineWidth   = 1.5;
-                    break;
-                }
-                case 'tall': {
-                    const bx = o.x, by = GY - 60, bw = 40, bh = 60;
-                    ctx.fillStyle = NEON_D;
-                    ctx.fillRect(bx, by, bw, bh);
-                    ctx.fillStyle   = NEON;
-                    ctx.strokeStyle = NEON;
-                    ctx.lineWidth   = 2;
-                    ctx.strokeRect(bx, by, bw, bh);
-                    // three horizontal lines
-                    for (let yi = 1; yi <= 2; yi++) {
-                        const ly = by + (bh / 3) * yi;
-                        ctx.beginPath(); ctx.moveTo(bx + 4, ly); ctx.lineTo(bx + bw - 4, ly); ctx.stroke();
-                    }
-                    ctx.strokeStyle = NEON_M;
-                    ctx.lineWidth   = 1.5;
-                    break;
-                }
-            }
-        }
-        ctx.shadowBlur = 0;
+        ctx.shadowColor = NEON; ctx.shadowBlur = 5;
+        ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
     }
+    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+}
 
-    function updateAndDrawParticles() {
-        for (const p of particles) {
-            ctx.globalAlpha = Math.max(0, p.life);
-            ctx.fillStyle   = NEON;
-            ctx.shadowColor = NEON;
-            ctx.shadowBlur  = 5;
-            ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
-        }
-        ctx.globalAlpha = 1;
-        ctx.shadowBlur  = 0;
-    }
+/* ── Player shapes ── */
+function drawPlayer() {
+    const cx = player.x + PS / 2, cy = player.y + PS / 2;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(player.rot);
+    ctx.shadowColor = NEON; ctx.shadowBlur = 16;
 
-    function drawPlayer() {
-        const cx = player.x + PS / 2;
-        const cy = player.y + PS / 2;
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(player.rot);
-
-        ctx.shadowColor = NEON;
-        ctx.shadowBlur  = 16;
-
-        // body fill
+    if (gameMode === 'cube') {
+        // Square cube
         ctx.fillStyle = NEON_D;
-        ctx.fillRect(-PS / 2, -PS / 2, PS, PS);
+        ctx.fillRect(-PS/2, -PS/2, PS, PS);
+        ctx.strokeStyle = NEON; ctx.lineWidth = 2.5;
+        ctx.strokeRect(-PS/2, -PS/2, PS, PS);
+        ctx.strokeStyle = NEON_M; ctx.lineWidth = 1.5;
+        ctx.strokeRect(-PS/4, -PS/4, PS/2, PS/2);
+        ctx.fillStyle = NEON;
+        ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI*2); ctx.fill();
 
-        // outer border
-        ctx.strokeStyle = NEON;
-        ctx.lineWidth   = 2.5;
-        ctx.strokeRect(-PS / 2, -PS / 2, PS, PS);
+    } else if (gameMode === 'ball') {
+        // Circle ball
+        const r = PS / 2;
+        ctx.fillStyle = NEON_D;
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = NEON; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.stroke();
+        // inner ring
+        ctx.strokeStyle = NEON_M; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(0, 0, r * 0.5, 0, Math.PI*2); ctx.stroke();
+        // off-centre dot (shows rotation)
+        ctx.fillStyle = NEON;
+        ctx.beginPath(); ctx.arc(r * 0.6, 0, 3, 0, Math.PI*2); ctx.fill();
 
-        // inner square
-        ctx.strokeStyle = NEON_M;
-        ctx.lineWidth   = 1.5;
-        ctx.strokeRect(-PS / 4, -PS / 4, PS / 2, PS / 2);
-
-        // centre dot
+    } else if (gameMode === 'wave') {
+        // Diamond / arrowhead wave shape
+        const s = PS / 2;
+        ctx.fillStyle = NEON_D;
+        ctx.beginPath();
+        ctx.moveTo(0, -s); ctx.lineTo(s, 0); ctx.lineTo(0, s); ctx.lineTo(-s, 0);
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = NEON; ctx.lineWidth = 2.5; ctx.stroke();
+        // inner diamond
+        ctx.strokeStyle = NEON_M; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, -s*0.48); ctx.lineTo(s*0.48, 0);
+        ctx.lineTo(0, s*0.48); ctx.lineTo(-s*0.48, 0);
+        ctx.closePath(); ctx.stroke();
+        ctx.fillStyle = NEON;
+        ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI*2); ctx.fill();
+        // trail effect
+        ctx.globalAlpha = 0.3;
         ctx.fillStyle = NEON;
         ctx.beginPath();
-        ctx.arc(0, 0, 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.shadowBlur = 0;
-        ctx.restore();
+        ctx.moveTo(-s*0.5, -s*0.3); ctx.lineTo(-s*1.2, 0); ctx.lineTo(-s*0.5, s*0.3);
+        ctx.closePath(); ctx.fill();
+        ctx.globalAlpha = 1;
     }
 
-    function drawHUD() {
-        ctx.fillStyle   = NEON;
-        ctx.shadowColor = NEON;
-        ctx.shadowBlur  = 5;
-        ctx.font        = 'bold 12px system-ui';
-        ctx.textAlign   = 'left';
-        ctx.fillText('score: ' + Math.floor(score), 8, 16);
-        ctx.shadowBlur  = 0;
-        ctx.textAlign   = 'left';
-    }
+    ctx.shadowBlur = 0;
+    ctx.restore();
+}
 
-    function drawGame() {
-        drawBg();
-        drawObstacles();
-        updateAndDrawParticles();
-        drawGround();
-        drawPlayer();
-        drawHUD();
-    }
+/* ── HUD ── */
+function drawHUD() {
+    ctx.shadowColor = NEON; ctx.shadowBlur = 5;
+    ctx.fillStyle = NEON;
+    ctx.font = 'bold 12px system-ui';
+    ctx.textAlign = 'left';
+    ctx.fillText('score: ' + Math.floor(score), 8, 16);
 
-    // ── Start ──
-    startGame();
-    </script>
+    // Mode tag top-right
+    const modeStr = gameMode.toUpperCase();
+    ctx.textAlign = 'right';
+    ctx.fillText(modeStr, W - 8, 16);
+    ctx.shadowBlur = 0; ctx.textAlign = 'left';
+
+    // Progress bar showing time until next mode (thin strip at very top)
+    const progress = Math.min(1, (score - (nextModeScore - 220)) / 220);
+    ctx.fillStyle = '#003318';
+    ctx.fillRect(0, 0, W, 3);
+    ctx.fillStyle = NEON;
+    ctx.fillRect(0, 0, W * progress, 3);
+}
+
+/* ── Mode flash overlay ── */
+function drawModeFlash() {
+    if (!modeFlash) return;
+    const a = modeFlash.life > 0.5 ? 1 : modeFlash.life * 2;
+    ctx.globalAlpha = a;
+    ctx.textAlign   = 'center';
+    ctx.font        = 'bold italic 30px system-ui';
+    ctx.fillStyle   = NEON;
+    ctx.shadowColor = NEON; ctx.shadowBlur = 28;
+    ctx.fillText(modeFlash.text, W / 2, H / 2 + 10);
+    ctx.shadowBlur  = 0;
+    ctx.globalAlpha = 1;
+    ctx.textAlign   = 'left';
+}
+
+function drawGame() {
+    drawBg();
+    drawObstacles();
+    drawParticles();
+    drawGround();
+    drawPlayer();
+    drawHUD();
+    drawModeFlash();
+}
+
+startGame();
+</script>
 </body>
 </html>
