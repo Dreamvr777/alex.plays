@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -169,6 +171,7 @@
     </div>
 
     <a href="page9.html" class="back-arrow" title="Previous Page">&#8249;</a>
+    <a href="page11.html" class="back-arrow" style="left:auto; right:28px; background:linear-gradient(135deg,#0d0020,#7b2fff); border-color:#b76cff; color:#b76cff;" title="Next Page">&#8250;</a>
 
 <script>
 /* ════════════════════════════════════════════════
@@ -209,6 +212,7 @@ let nextModeScore;
 let ballGravDir;        // 1 = down, -1 = up
 let holding;            // true while mouse/touch/key held (wave)
 let modeFlash;          // { text, life } mode-change overlay
+let waveCountdown;      // seconds remaining in wave countdown (0 = active)
 
 /* ─── Start / Restart ─── */
 function startGame() {
@@ -225,6 +229,7 @@ function startGame() {
     ballGravDir  = 1;
     holding      = false;
     modeFlash    = null;
+    waveCountdown = 0;
 
     if (rafId) cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(tick);
@@ -302,8 +307,10 @@ function switchMode() {
         player.vy   = 0;
         // keep current y
     } else if (gameMode === 'wave') {
-        player.y  = GY / 2 - PS / 2;   // centre
+        player.y  = 2;                  // start at the top
         player.vy = 0;
+        waveCountdown = 3.0;            // 3-second countdown
+        obstacles  = [];                // already cleared above, but ensure fresh
     }
 
     modeFlash = { text: MODE_LABELS[gameMode], life: 2.2 };
@@ -383,6 +390,21 @@ function tick() {
 
     // Mode transition
     if (score >= nextModeScore) switchMode();
+
+    // Wave countdown — freeze spawning & collision
+    if (gameMode === 'wave' && waveCountdown > 0) {
+        waveCountdown -= 1 / 60;
+        if (waveCountdown < 0) waveCountdown = 0;
+        // Still move the player slightly so it feels alive, but no death
+        const target = holding ? -Math.PI / 5 : Math.PI / 5;
+        player.rot += (target - player.rot) * 0.18;
+        tickParticles();
+        particles = particles.filter(p => p.life > 0);
+        drawGame();
+        drawWaveCountdown();
+        rafId = requestAnimationFrame(tick);
+        return;
+    }
 
     // Physics
     if (gameMode === 'cube')  updateCube();
@@ -658,6 +680,28 @@ function drawHUD() {
     ctx.fillRect(0, 0, W, 3);
     ctx.fillStyle = NEON;
     ctx.fillRect(0, 0, W * progress, 3);
+}
+
+/* ── Wave countdown overlay ── */
+function drawWaveCountdown() {
+    const num = Math.ceil(waveCountdown);
+    const label = num > 0 ? String(num) : 'GO!';
+    // Pulsing scale based on fractional part
+    const frac = waveCountdown > 0 ? (waveCountdown % 1) : 0;
+    const scale = waveCountdown > 0 ? (0.7 + frac * 0.5) : 1.3;
+
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.scale(scale, scale);
+    ctx.textAlign  = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font       = 'bold italic 56px system-ui';
+    ctx.fillStyle  = NEON;
+    ctx.shadowColor = NEON; ctx.shadowBlur = 36;
+    ctx.fillText(label, 0, 0);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+    ctx.textBaseline = 'alphabetic';
 }
 
 /* ── Mode flash overlay ── */

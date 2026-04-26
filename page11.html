@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>m3gtse92 - Page 11</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #03010d;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* ── Starfield canvas sits fixed behind everything ── */
+        #starfield {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ── All page content sits above the starfield ── */
+        .content-layer {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Scroll sections ── */
+        .scroll-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        /* ── Cards ── */
+        .message-card {
+            width: 540px;
+            max-width: 100%;
+            background: rgba(0,0,0,0.78);
+            border: 2px solid #7b2fff55;
+            border-radius: 16px;
+            padding: 38px 30px;
+            text-align: center;
+            font-style: italic;
+            font-weight: bold;
+            opacity: 0;
+            transform: translateY(55px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            backdrop-filter: blur(6px);
+            box-shadow: 0 0 40px #7b2fff22, inset 0 0 30px #0d003322;
+        }
+
+        .message-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Page label ── */
+        .page-label {
+            font-size: 0.8rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #c97bff;
+            text-shadow: 0 0 10px #c97bff;
+            margin-bottom: 18px;
+        }
+
+        /* ── Headings ── */
+        .message-card h1 {
+            font-size: 1.95rem;
+            color: #b76cff;
+            text-shadow: 0 0 20px #9b3fff, 0 0 40px #7b2fff44;
+            line-height: 1.3;
+            margin-bottom: 12px;
+        }
+
+        /* ── Body text ── */
+        .message-card p {
+            font-size: 1.05rem;
+            color: #d9b8ff;
+            text-shadow: 0 0 8px #7b2fff44;
+            line-height: 1.75;
+        }
+
+        .message-card p b { color: #c97bff; }
+
+        /* ── Scroll hint ── */
+        .scroll-hint {
+            margin-top: 26px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: #b76cff;
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            animation: bounce 1.3s ease-in-out infinite;
+        }
+        .scroll-hint .arrow { font-size: 1.8rem; line-height: 1; }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(9px); }
+        }
+
+        /* ── Game card ── */
+        .game-card {
+            width: 600px;
+        }
+
+        #cometCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            margin-top: 18px;
+            border-radius: 10px;
+            border: 2px solid #7b2fff55;
+            cursor: crosshair;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+            image-rendering: crisp-edges;
+        }
+
+        /* ── Quote section ── */
+        .quote-card {
+            width: 500px;
+        }
+
+        .big-quote {
+            font-size: 2.8rem;
+            line-height: 1.2;
+            margin-bottom: 14px;
+            background: linear-gradient(135deg, #c97bff, #5bf0e8, #ff6bcb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            filter: drop-shadow(0 0 16px #9b3fff66);
+        }
+
+        /* ── Constellation card ── */
+        #constellationCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            margin-top: 18px;
+            border-radius: 10px;
+            border: 2px solid #5bf0e855;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        /* ── Back arrow ── */
+        .back-arrow {
+            position: fixed;
+            bottom: 28px;
+            left: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 54px;
+            height: 54px;
+            background: linear-gradient(135deg, #0d0020, #7b2fff);
+            border: 2px solid #b76cff;
+            border-radius: 50%;
+            color: #b76cff;
+            font-size: 28px;
+            text-decoration: none;
+            transition: transform 0.15s, box-shadow 0.15s;
+            z-index: 999;
+        }
+        .back-arrow:hover {
+            transform: scale(1.12);
+            box-shadow: 0 0 24px rgba(180, 100, 255, 0.7);
+        }
+
+        /* ── Neon divider ── */
+        .neon-line {
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #7b2fff, #5bf0e8);
+            border-radius: 4px;
+            margin: 18px auto 0;
+            box-shadow: 0 0 14px #9b3fff88;
+        }
+
+        /* ── Emoji float anim ── */
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(-4deg); }
+            50%       { transform: translateY(-10px) rotate(4deg); }
+        }
+        .emoji-float {
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+            font-style: normal;
+        }
+
+        /* ── Pulse ring anim (around score on game) ── */
+        @keyframes pulseRing {
+            0%   { box-shadow: 0 0 0 0 #b76cff88; }
+            70%  { box-shadow: 0 0 0 12px #b76cff00; }
+            100% { box-shadow: 0 0 0 0 #b76cff00; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Starfield background -->
+<canvas id="starfield"></canvas>
+
+<div class="content-layer">
+
+    <!-- ── Section 1 ── -->
+    <div class="scroll-section">
+        <div class="message-card" data-reveal>
+            <p class="page-label">Page 11</p>
+            <h1>yeah… we still going 💀</h1>
+            <p>idk how u got here but u did<br>so i had to make something for u</p>
+            <div class="neon-line"></div>
+            <div class="scroll-hint">
+                <span>keep going</span>
+                <span class="arrow">↓</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Section 2 ── -->
+    <div class="scroll-section">
+        <div class="message-card" data-reveal>
+            <h1>honestly at this point<br>we're basically besties <span class="emoji-float">🌌</span></h1>
+            <p>like u have been scrolling for ages<br>that's dedication fr</p>
+            <div class="scroll-hint"><span class="arrow">↓</span></div>
+        </div>
+    </div>
+
+    <!-- ── Section 3 — Big quote ── -->
+    <div class="scroll-section">
+        <div class="message-card quote-card" data-reveal>
+            <p class="big-quote">"keep going<br>even when<br>it's hard"</p>
+            <p style="color:#c97bff; font-size:0.9rem;">— me, to u, right now 🫶</p>
+            <div class="neon-line"></div>
+            <div class="scroll-hint"><span class="arrow">↓</span></div>
+        </div>
+    </div>
+
+    <!-- ── Section 4 — Constellation maker ── -->
+    <div class="scroll-section">
+        <div class="message-card game-card" data-reveal>
+            <h1>make ur own constellation ✨</h1>
+            <p>
+                <b>click / tap</b> anywhere on the canvas to place a star<br>
+                stars nearby will connect automatically
+            </p>
+            <canvas id="constellationCanvas" width="556" height="220"></canvas>
+        </div>
+    </div>
+
+    <!-- ── Section 5 — Comet catch game ── -->
+    <div class="scroll-section">
+        <div class="message-card game-card" data-reveal>
+            <h1>catch the comet 🌠</h1>
+            <p>
+                <b>click / tap</b> the comet before it vanishes<br>
+                higher score = faster comets. gl 💜
+            </p>
+            <canvas id="cometCanvas" width="556" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- ── Section 6 — Outro ── -->
+    <div class="scroll-section">
+        <div class="message-card" data-reveal>
+            <h1>ok that's actually it now 😭</h1>
+            <p>
+                for real this time<br>
+                thank u for staying this long<br>
+                it actually means a lot 💜
+            </p>
+            <div class="neon-line"></div>
+            <p style="margin-top:18px; color:#c97bff; font-size:0.88rem; letter-spacing:1px;">
+                — m3gtse92
+            </p>
+        </div>
+    </div>
+
+</div><!-- /content-layer -->
+
+<a href="page10.html" class="back-arrow" title="Previous Page">&#8249;</a>
+
+<script>
+/* ════════════════════════════════════════════
+   SCROLL REVEAL
+════════════════════════════════════════════ */
+const revealObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.2 });
+document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
+
+/* ════════════════════════════════════════════
+   ANIMATED STARFIELD BACKGROUND
+════════════════════════════════════════════ */
+(function () {
+    const sf  = document.getElementById('starfield');
+    const sfc = sf.getContext('2d');
+    let W, H;
+    const STAR_COUNT = 220;
+    const stars = [];
+
+    function resizeSF() {
+        W = sf.width  = window.innerWidth;
+        H = sf.height = window.innerHeight;
+    }
+
+    function makeStar() {
+        return {
+            x    : Math.random() * W,
+            y    : Math.random() * H,
+            r    : Math.random() * 1.4 + 0.2,
+            a    : Math.random(),          // base alpha
+            da   : (Math.random() * 0.012 + 0.003) * (Math.random() < 0.5 ? 1 : -1),
+            speed: Math.random() * 0.08 + 0.01
+        };
+    }
+
+    function initStars() {
+        stars.length = 0;
+        for (let i = 0; i < STAR_COUNT; i++) stars.push(makeStar());
+    }
+
+    // Shooting stars
+    const shoots = [];
+    function spawnShoot() {
+        shoots.push({
+            x   : Math.random() * W,
+            y   : Math.random() * H * 0.5,
+            vx  : 5 + Math.random() * 6,
+            vy  : 2 + Math.random() * 3,
+            life: 1,
+            len : 60 + Math.random() * 80
+        });
+    }
+    setInterval(spawnShoot, 2200);
+
+    function tickSF() {
+        sfc.clearRect(0, 0, W, H);
+
+        // Nebula blobs
+        const nebs = [
+            { x: W*0.2, y: H*0.3, r: 160, c: 'rgba(100,30,200,0.06)' },
+            { x: W*0.75,y: H*0.6, r: 200, c: 'rgba(0,180,200,0.05)' },
+            { x: W*0.5, y: H*0.8, r: 180, c: 'rgba(200,50,150,0.04)' }
+        ];
+        nebs.forEach(n => {
+            const g = sfc.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+            g.addColorStop(0, n.c);
+            g.addColorStop(1, 'transparent');
+            sfc.fillStyle = g;
+            sfc.beginPath();
+            sfc.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+            sfc.fill();
+        });
+
+        // Regular stars
+        for (const s of stars) {
+            s.a  += s.da;
+            if (s.a > 1 || s.a < 0.05) s.da *= -1;
+            s.y  -= s.speed;
+            if (s.y < -2) s.y = H + 2;
+
+            sfc.globalAlpha = s.a;
+            sfc.fillStyle   = '#ffffff';
+            sfc.beginPath();
+            sfc.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            sfc.fill();
+        }
+
+        // Shooting stars
+        for (let i = shoots.length - 1; i >= 0; i--) {
+            const s = shoots[i];
+            s.x    += s.vx;
+            s.y    += s.vy;
+            s.life -= 0.025;
+
+            if (s.life <= 0) { shoots.splice(i, 1); continue; }
+
+            const a = s.life;
+            const grd = sfc.createLinearGradient(
+                s.x - s.vx / s.vx * s.len, s.y - s.vy / s.vx * s.len,
+                s.x, s.y
+            );
+            grd.addColorStop(0, `rgba(255,255,255,0)`);
+            grd.addColorStop(1, `rgba(200,160,255,${a})`);
+            sfc.globalAlpha = 1;
+            sfc.strokeStyle = grd;
+            sfc.lineWidth   = 1.5;
+            sfc.beginPath();
+            sfc.moveTo(s.x - s.vx / Math.hypot(s.vx, s.vy) * s.len,
+                       s.y - s.vy / Math.hypot(s.vx, s.vy) * s.len);
+            sfc.lineTo(s.x, s.y);
+            sfc.stroke();
+        }
+
+        sfc.globalAlpha = 1;
+        requestAnimationFrame(tickSF);
+    }
+
+    resizeSF();
+    initStars();
+    window.addEventListener('resize', () => { resizeSF(); });
+    requestAnimationFrame(tickSF);
+})();
+
+/* ════════════════════════════════════════════
+   CONSTELLATION MAKER
+════════════════════════════════════════════ */
+(function () {
+    const cv  = document.getElementById('constellationCanvas');
+    const ctx = cv.getContext('2d');
+    const CW  = 556, CH = 220;
+    const LINK_DIST = 90;
+    const STAR_COL  = '#c97bff';
+    const LINE_COL  = '#7b2fff';
+    const CYAN_COL  = '#5bf0e8';
+
+    // Some pre-placed background faint stars
+    const bgStars = Array.from({ length: 60 }, () => ({
+        x: Math.random() * CW,
+        y: Math.random() * CH,
+        r: Math.random() * 0.9 + 0.2,
+        a: Math.random() * 0.4 + 0.1
+    }));
+
+    // User-placed stars
+    const userStars = [];
+
+    function draw() {
+        ctx.clearRect(0, 0, CW, CH);
+
+        // Dark bg
+        ctx.fillStyle = '#03010d';
+        ctx.fillRect(0, 0, CW, CH);
+
+        // Background stars
+        for (const s of bgStars) {
+            ctx.globalAlpha = s.a;
+            ctx.fillStyle   = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        // Lines between nearby user stars
+        ctx.lineWidth   = 1;
+        for (let i = 0; i < userStars.length; i++) {
+            for (let j = i + 1; j < userStars.length; j++) {
+                const dx = userStars[i].x - userStars[j].x;
+                const dy = userStars[i].y - userStars[j].y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < LINK_DIST) {
+                    const a = 1 - dist / LINK_DIST;
+                    ctx.strokeStyle = LINE_COL;
+                    ctx.globalAlpha = a * 0.7;
+                    ctx.shadowColor = CYAN_COL;
+                    ctx.shadowBlur  = 6;
+                    ctx.beginPath();
+                    ctx.moveTo(userStars[i].x, userStars[i].y);
+                    ctx.lineTo(userStars[j].x, userStars[j].y);
+                    ctx.stroke();
+                }
+            }
+        }
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur  = 0;
+
+        // User stars
+        for (const s of userStars) {
+            // glow
+            ctx.shadowColor = STAR_COL;
+            ctx.shadowBlur  = 18;
+            ctx.fillStyle   = STAR_COL;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Spike cross
+            ctx.strokeStyle = '#ffffff';
+            ctx.shadowBlur  = 8;
+            ctx.lineWidth   = 1;
+            ctx.beginPath();
+            ctx.moveTo(s.x - 8, s.y); ctx.lineTo(s.x + 8, s.y);
+            ctx.moveTo(s.x, s.y - 8); ctx.lineTo(s.x, s.y + 8);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        // HUD
+        ctx.fillStyle   = '#c97bff';
+        ctx.shadowColor = '#c97bff';
+        ctx.shadowBlur  = 5;
+        ctx.font        = 'bold 11px system-ui';
+        ctx.textAlign   = 'left';
+        ctx.fillText(`stars: ${userStars.length}`, 8, 18);
+        ctx.textAlign   = 'right';
+        ctx.fillText('click to place ✦', CW - 8, 18);
+        ctx.shadowBlur  = 0;
+    }
+
+    function getPos(e) {
+        const rect = cv.getBoundingClientRect();
+        const scaleX = CW / rect.width;
+        const scaleY = CH / rect.height;
+        if (e.touches) {
+            return {
+                x: (e.touches[0].clientX - rect.left) * scaleX,
+                y: (e.touches[0].clientY - rect.top)  * scaleY
+            };
+        }
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top)  * scaleY
+        };
+    }
+
+    function addStar(e) {
+        e.preventDefault();
+        const p = getPos(e);
+        // Limit to 40 stars
+        if (userStars.length >= 40) userStars.shift();
+        userStars.push({ x: p.x, y: p.y });
+        draw();
+    }
+
+    cv.addEventListener('click',      addStar);
+    cv.addEventListener('touchstart', addStar, { passive: false });
+
+    draw();
+})();
+
+/* ════════════════════════════════════════════
+   CATCH THE COMET — MINI GAME
+════════════════════════════════════════════ */
+(function () {
+    const cv  = document.getElementById('cometCanvas');
+    const ctx = cv.getContext('2d');
+    const CW  = 556, CH = 200;
+
+    const PURPLE = '#b76cff';
+    const CYAN   = '#5bf0e8';
+    const PINK   = '#ff6bcb';
+    const RED    = '#ff4466';
+
+    let score   = 0;
+    let misses  = 0;
+    let running = false;
+    let comet   = null;
+    let burst   = [];
+    let rafId;
+    let baseSpeed = 3.2;
+
+    /* ── Comet spawn ── */
+    function spawnComet() {
+        // Start from a random edge
+        const side = Math.floor(Math.random() * 4); // 0=top 1=right 2=bottom 3=left
+        let x, y, vx, vy;
+        const spd = baseSpeed + score * 0.12;
+        const angle = Math.random() * Math.PI * 0.5 + Math.PI * 0.2;
+
+        switch (side) {
+            case 0: x = Math.random()*CW; y = -20; vx = (Math.random()-0.5)*spd; vy = spd; break;
+            case 1: x = CW+20; y = Math.random()*CH; vx = -spd; vy = (Math.random()-0.5)*spd; break;
+            case 2: x = Math.random()*CW; y = CH+20; vx = (Math.random()-0.5)*spd; vy = -spd; break;
+            default: x = -20; y = Math.random()*CH; vx = spd; vy = (Math.random()-0.5)*spd; break;
+        }
+        const mag = Math.hypot(vx, vy);
+        vx = vx / mag * spd;
+        vy = vy / mag * spd;
+
+        const life = 200 - score * 2.5;  // frames alive
+        comet = { x, y, vx, vy, life, maxLife: Math.max(life, 60), r: 9 + Math.random()*5 };
+    }
+
+    /* ── Burst ── */
+    function spawnBurst(x, y, col) {
+        for (let i = 0; i < 18; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const spd = Math.random() * 5 + 1.5;
+            burst.push({ x, y, vx: Math.cos(a)*spd, vy: Math.sin(a)*spd, life: 1, col });
+        }
+    }
+
+    /* ── Start ── */
+    function startGame() {
+        score   = 0;
+        misses  = 0;
+        running = true;
+        burst   = [];
+        comet   = null;
+        if (rafId) cancelAnimationFrame(rafId);
+        spawnComet();
+        rafId = requestAnimationFrame(tick);
+    }
+
+    /* ── Tick ── */
+    function tick() {
+        // Background
+        ctx.fillStyle = '#03010d';
+        ctx.fillRect(0, 0, CW, CH);
+
+        // Grid
+        ctx.strokeStyle = '#150030';
+        ctx.lineWidth   = 1;
+        for (let x = 0; x < CW; x += 36) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,CH); ctx.stroke(); }
+        for (let y = 0; y < CH; y += 36) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(CW,y); ctx.stroke(); }
+
+        if (!running) { rafId = requestAnimationFrame(tick); return; }
+
+        // Move comet
+        if (comet) {
+            comet.x    += comet.vx;
+            comet.y    += comet.vy;
+            comet.life -= 1;
+
+            // Draw tail
+            const tailLen = 28 + score;
+            for (let i = 1; i <= 6; i++) {
+                const t   = i / 6;
+                const tx  = comet.x - comet.vx * tailLen * t / 4;
+                const ty  = comet.y - comet.vy * tailLen * t / 4;
+                ctx.globalAlpha = (1 - t) * 0.5;
+                ctx.fillStyle   = CYAN;
+                ctx.shadowColor = CYAN;
+                ctx.shadowBlur  = 8;
+                ctx.beginPath();
+                ctx.arc(tx, ty, comet.r * (1 - t * 0.7), 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+            // Urgency colour based on remaining life
+            const lifeFrac = comet.life / comet.maxLife;
+            const col = lifeFrac > 0.4 ? PURPLE : (lifeFrac > 0.2 ? '#ffaa00' : RED);
+
+            // Draw comet body
+            ctx.shadowColor = col;
+            ctx.shadowBlur  = 24;
+            ctx.fillStyle   = col;
+            ctx.beginPath();
+            ctx.arc(comet.x, comet.y, comet.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth   = 1.5;
+            ctx.shadowBlur  = 8;
+            ctx.stroke();
+            ctx.shadowBlur  = 0;
+
+            // Timer ring
+            const pct = comet.life / comet.maxLife;
+            ctx.strokeStyle = col;
+            ctx.lineWidth   = 2.5;
+            ctx.shadowColor = col;
+            ctx.shadowBlur  = 10;
+            ctx.beginPath();
+            ctx.arc(comet.x, comet.y, comet.r + 6, -Math.PI/2, -Math.PI/2 + Math.PI*2*pct);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Out of time
+            if (comet.life <= 0 || comet.x < -60 || comet.x > CW+60 || comet.y < -60 || comet.y > CH+60) {
+                misses++;
+                comet = null;
+                if (misses >= 3) {
+                    running = false;
+                } else {
+                    setTimeout(spawnComet, 400);
+                }
+            }
+        }
+
+        // Burst particles
+        for (let i = burst.length - 1; i >= 0; i--) {
+            const p = burst[i];
+            p.x += p.vx; p.y += p.vy;
+            p.vy += 0.15;
+            p.life -= 0.045;
+            if (p.life <= 0) { burst.splice(i, 1); continue; }
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle   = p.col;
+            ctx.shadowColor = p.col;
+            ctx.shadowBlur  = 6;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur  = 0;
+
+        // HUD
+        ctx.shadowColor = PURPLE;
+        ctx.shadowBlur  = 6;
+        ctx.fillStyle   = PURPLE;
+        ctx.font        = 'bold 13px system-ui';
+        ctx.textAlign   = 'left';
+        ctx.fillText('score: ' + score, 8, 18);
+
+        // Miss hearts
+        ctx.textAlign = 'right';
+        ctx.font = '15px system-ui';
+        const hearts = ['💜','💜','💜'];
+        for (let i = 0; i < 3; i++) {
+            ctx.fillStyle = i < (3 - misses) ? '#b76cff' : '#333';
+            ctx.fillText(hearts[i], CW - 8 - i * 22, 18);
+        }
+        ctx.shadowBlur = 0;
+
+        // Game over
+        if (!running && burst.length === 0) {
+            ctx.textAlign   = 'center';
+            ctx.font        = 'bold italic 22px system-ui';
+            ctx.fillStyle   = PINK;
+            ctx.shadowColor = PINK;
+            ctx.shadowBlur  = 18;
+            ctx.fillText('💔  game over — tap to retry', CW/2, CH/2 - 4);
+            ctx.font        = 'italic 13px system-ui';
+            ctx.fillStyle   = '#d9b8ff';
+            ctx.shadowBlur  = 0;
+            ctx.fillText('score: ' + score, CW/2, CH/2 + 17);
+        } else if (!running) {
+            // Still animating burst
+        }
+
+        rafId = requestAnimationFrame(tick);
+    }
+
+    /* ── Click / tap ── */
+    function getPos(e) {
+        const rect  = cv.getBoundingClientRect();
+        const scaleX = CW / rect.width;
+        const scaleY = CH / rect.height;
+        if (e.touches) {
+            return { x: (e.touches[0].clientX - rect.left)*scaleX, y: (e.touches[0].clientY - rect.top)*scaleY };
+        }
+        return { x: (e.clientX - rect.left)*scaleX, y: (e.clientY - rect.top)*scaleY };
+    }
+
+    function handleClick(e) {
+        e.preventDefault();
+        if (!running) { startGame(); return; }
+        if (!comet) return;
+        const p   = getPos(e);
+        const dx  = p.x - comet.x;
+        const dy  = p.y - comet.y;
+        const hit = Math.hypot(dx, dy) <= comet.r + 14;  // generous radius
+        if (hit) {
+            score++;
+            spawnBurst(comet.x, comet.y, CYAN);
+            comet = null;
+            setTimeout(spawnComet, 300);
+        }
+    }
+
+    cv.addEventListener('mousedown',  handleClick);
+    cv.addEventListener('touchstart', handleClick, { passive: false });
+
+    /* ── Initial idle draw ── */
+    (function idleDraw() {
+        ctx.fillStyle = '#03010d';
+        ctx.fillRect(0, 0, CW, CH);
+        ctx.strokeStyle = '#150030';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < CW; x += 36) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,CH); ctx.stroke(); }
+        for (let y = 0; y < CH; y += 36) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(CW,y); ctx.stroke(); }
+        ctx.textAlign   = 'center';
+        ctx.font        = 'bold italic 18px system-ui';
+        ctx.fillStyle   = PURPLE;
+        ctx.shadowColor = PURPLE;
+        ctx.shadowBlur  = 16;
+        ctx.fillText('tap to start 🌠', CW/2, CH/2);
+        ctx.shadowBlur  = 0;
+    })();
+})();
+</script>
+</body>
+</html>
