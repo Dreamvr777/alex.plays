@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>m3gtse92 - DJ Party Zone</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top, #2d004d, #0a0015 70%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .page-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .container {
+            width: 620px;
+            max-width: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            padding: 28px 22px;
+            border-radius: 12px;
+            border: 3px solid #ff4de1;
+            text-align: center;
+            box-shadow: 0 0 22px rgba(255, 77, 225, 0.4);
+        }
+
+        .page-label {
+            color: #ff9bf2;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            color: #ff4de1;
+            text-shadow: 0 0 12px rgba(255, 77, 225, 0.8);
+        }
+
+        .subtext {
+            margin: 0 0 18px 0;
+            color: #d9b3ff;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .custom-input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .custom-input {
+            flex: 1;
+            max-width: 320px;
+            padding: 10px 14px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #ff4de1;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            outline: none;
+        }
+
+        .custom-input::placeholder {
+            color: #886688;
+        }
+
+        .custom-input:focus {
+            box-shadow: 0 0 12px rgba(255, 77, 225, 0.5);
+        }
+
+        .custom-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #ff4de1, #8e2de2);
+            color: #fff;
+            border: 2px solid #ff4de1;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .custom-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 12px rgba(255, 77, 225, 0.5);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3b0b64, #8e2de2);
+            color: #fff;
+            border: 2px solid #ff4de1;
+            border-radius: 8px;
+            padding: 10px 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 12px rgba(255, 77, 225, 0.5);
+        }
+
+        .btn.is-active {
+            background: linear-gradient(135deg, #ff4de1, #8e2de2);
+            box-shadow: 0 0 14px rgba(255, 77, 225, 0.7);
+        }
+
+        .dj-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 12px 0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 2px solid #ff4de1;
+        }
+
+        .volume-control label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #ff9bf2;
+        }
+
+        .volume-control input[type="range"] {
+            width: 80px;
+            accent-color: #ff4de1;
+        }
+
+        .status {
+            margin-top: 8px;
+            color: #9cffc7;
+            min-height: 24px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .party-lights {
+            margin-top: 16px;
+            height: 12px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #ff4de1, #00ffff, #39ff14, #ff4de1);
+            background-size: 200% 100%;
+            animation: pulse 1.4s linear infinite;
+        }
+
+        .party-lights.off {
+            opacity: 0.25;
+            animation-play-state: paused;
+        }
+
+        .nav-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 54px;
+            height: 54px;
+            background: linear-gradient(135deg, #220033, #ff4de1);
+            border: 2px solid #ff4de1;
+            border-radius: 50%;
+            color: #ff4de1;
+            font-size: 28px;
+            text-decoration: none;
+            transition: transform 0.15s, box-shadow 0.15s;
+            flex-shrink: 0;
+        }
+
+        .nav-arrow:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255, 77, 225, 0.6);
+        }
+
+        @keyframes pulse {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        .drum-pad-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ff4de1;
+        }
+
+        .drum-pad-label {
+            color: #ff9bf2;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .drum-pad-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+
+        .drum-pad {
+            aspect-ratio: 1;
+            background: linear-gradient(145deg, #1a1a2e, #0d0d1a);
+            border: 2px solid #ff4de1;
+            border-radius: 8px;
+            color: #ff9bf2;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.05s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            user-select: none;
+        }
+
+        .drum-pad:active, .drum-pad.active {
+            background: linear-gradient(145deg, #ff4de1, #8e2de2);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(255, 77, 225, 0.8);
+            transform: scale(0.95);
+        }
+
+        .drum-pad:hover {
+            box-shadow: 0 0 10px rgba(255, 77, 225, 0.5);
+        }
+
+        .drum-volume {
+            margin-top: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .drum-volume label {
+            font-size: 11px;
+            color: #886688;
+        }
+
+        .drum-volume input {
+            width: 60px;
+            accent-color: #ff4de1;
+        }
+
+        .youtube-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 120px;
+            border: 3px solid #ff4de1;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(255, 77, 225, 0.5);
+            z-index: 1000;
+            background: #000;
+        }
+
+        .youtube-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .player-label {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            font-size: 10px;
+            color: #ff4de1;
+            background: rgba(0,0,0,0.7);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <a href="page10.html" class="nav-arrow" title="Previous Page">&#8249;</a>
+        <div class="container">
+            <p class="page-label">DJ Party Zone</p>
+            <h1>Turn Up the Party!</h1>
+            <p class="subtext">Select a track or paste a YouTube link, then hit <strong>Play</strong> to start!</p>
+
+            <div class="controls">
+                <button class="btn track-btn is-active" data-video="dQw4w9WgXcQ" data-track="rockit">Rock It</button>
+                <button class="btn track-btn" data-video="zrX5zrPoZoM" data-track="halflight">Half Light</button>
+                <button class="btn track-btn" data-video="Ye5QXjqTDqE" data-track="backbone">BACKBONE</button>
+                <button class="btn track-btn" data-video="9X4iXYqxlPA" data-track="tour">Tour</button>
+                <button class="btn track-btn" data-video="Y3CYKXBEtf0" data-track="endorphins">Endorphins</button>
+            </div>
+
+            <div class="custom-input-row">
+                <input type="text" id="customSongInput" class="custom-input" placeholder="Paste YouTube URL..." maxlength="100">
+                <button id="playCustomBtn" class="custom-btn">Load</button>
+            </div>
+
+            <div class="dj-controls">
+                <button id="djToggle" class="btn">Play</button>
+                <button id="stopBtn" class="btn">Stop</button>
+                <button id="dropBtn" class="btn">Bass Drop</button>
+                <div class="volume-control">
+                    <label>Music</label>
+                    <input type="range" id="musicVolume" min="0" max="100" value="70">
+                </div>
+            </div>
+
+            <div id="status" class="status">Select a track to start...</div>
+            <div id="partyLights" class="party-lights off"></div>
+
+            <div class="drum-pad-section">
+                <div class="drum-pad-label">Drum Pad</div>
+                <div class="drum-pad-grid">
+                    <div class="drum-pad" data-sound="kick">Kick</div>
+                    <div class="drum-pad" data-sound="snare">Snare</div>
+                    <div class="drum-pad" data-sound="hihatc">Hi-Hat</div>
+                    <div class="drum-pad" data-sound="hihato">Open HH</div>
+                    <div class="drum-pad" data-sound="clap">Clap</div>
+                    <div class="drum-pad" data-sound="rim">Rim</div>
+                    <div class="drum-pad" data-sound="toml">Tom Low</div>
+                    <div class="drum-pad" data-sound="tomh">Tom Hi</div>
+                    <div class="drum-pad" data-sound="crash">Crash</div>
+                    <div class="drum-pad" data-sound="ride">Ride</div>
+                    <div class="drum-pad" data-sound="kick808">808 Kick</div>
+                    <div class="drum-pad" data-sound="snare808">808 Snare</div>
+                    <div class="drum-pad" data-sound="perc1">Perc 1</div>
+                    <div class="drum-pad" data-sound="perc2">Perc 2</div>
+                    <div class="drum-pad" data-sound="fx">FX</div>
+                    <div class="drum-pad" data-sound="sub">Sub Bass</div>
+                </div>
+                <div class="drum-volume">
+                    <label>Drums</label>
+                    <input type="range" id="drumVolume" min="0" max="100" value="80">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="youtube-container">
+        <div id="youtube-player"></div>
+        <div class="player-label">Now Playing</div>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        const tracks = {
+            rockit: { name: "Rock It - Sub Focus", videoId: "dQw4w9WgXcQ" },
+            halflight: { name: "Half Light - Wilkinson", videoId: "zrX5zrPoZoM" },
+            backbone: { name: "BACKBONE - Chase & Status ft. Stormzy", videoId: "Ye5QXjqTDqE" },
+            tour: { name: "Tour - Macky Gee", videoId: "9X4iXYqxlPA" },
+            endorphins: { name: "Endorphins - Sub Focus ft. Alex Clare", videoId: "Y3CYKXBEtf0" }
+        };
+
+        let player;
+        let currentVideoId = "dQw4w9WgXcQ";
+        let isPlaying = false;
+        let audioContext = null;
+        let drumGain = null;
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-player', {
+                height: '120',
+                width: '200',
+                videoId: currentVideoId,
+                playerVars: {
+                    'autoplay': 0,
+                    'controls': 1,
+                    'disablekb': 0,
+                    'fs': 0,
+                    'modestbranding': 1,
+                    'rel': 0,
+                    'showinfo': 0,
+                    'iv_load_policy': 3
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            player.setVolume(70);
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                isPlaying = false;
+                updateStatus("Track ended. Select another!");
+            }
+        }
+
+        const statusEl = document.getElementById("status");
+        const partyLightsEl = document.getElementById("partyLights");
+        const trackBtns = Array.from(document.querySelectorAll(".track-btn"));
+        const djToggleBtn = document.getElementById("djToggle");
+        const stopBtn = document.getElementById("stopBtn");
+        const dropBtn = document.getElementById("dropBtn");
+        const customInput = document.getElementById("customSongInput");
+        const playCustomBtn = document.getElementById("playCustomBtn");
+        const musicVolumeSlider = document.getElementById("musicVolume");
+        const drumVolumeSlider = document.getElementById("drumVolume");
+        const drumPads = document.querySelectorAll(".drum-pad");
+
+        function updateStatus(text) {
+            statusEl.textContent = text;
+        }
+
+        function setActiveTrackButton(trackKey) {
+            trackBtns.forEach((btn) => {
+                const active = btn.dataset.track === trackKey;
+                btn.classList.toggle("is-active", active);
+            });
+        }
+
+        function loadVideo(videoId, autoplay = true) {
+            currentVideoId = videoId;
+            if (player && player.loadVideoById) {
+                if (autoplay) {
+                    player.loadVideoById(videoId);
+                    isPlaying = true;
+                    partyLightsEl.classList.remove('off');
+                    djToggleBtn.textContent = "Pause";
+                } else {
+                    player.cueVideoById(videoId);
+                }
+            }
+        }
+
+        function playMusic() {
+            if (player && player.playVideo) {
+                player.playVideo();
+                isPlaying = true;
+                partyLightsEl.classList.remove('off');
+                djToggleBtn.textContent = "Pause";
+
+                const trackKey = Object.keys(tracks).find(k => tracks[k].videoId === currentVideoId);
+                const trackName = trackKey ? tracks[trackKey].name : "Custom track";
+                updateStatus("Now playing: " + trackName);
+            }
+        }
+
+        function stopMusic() {
+            if (player && player.stopVideo) {
+                player.stopVideo();
+                isPlaying = false;
+                partyLightsEl.classList.add('off');
+                djToggleBtn.textContent = "Play";
+                updateStatus("Stopped. Select a track!");
+            }
+        }
+
+        function togglePlay() {
+            if (isPlaying) {
+                if (player && player.pauseVideo) {
+                    player.pauseVideo();
+                    isPlaying = false;
+                    djToggleBtn.textContent = "Play";
+                    updateStatus("Paused");
+                }
+            } else {
+                playMusic();
+            }
+        }
+
+        function bassDrop() {
+            partyLightsEl.style.animationDuration = "0.3s";
+            updateStatus("BASS DROP!");
+            setTimeout(() => {
+                partyLightsEl.style.animationDuration = "1.4s";
+            }, 1000);
+
+            initAudio();
+            const ctx = audioContext;
+            const now = ctx.currentTime;
+
+            const osc1 = ctx.createOscillator();
+            const osc2 = ctx.createOscillator();
+            const osc3 = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc1.type = "sine";
+            osc1.frequency.setValueAtTime(60, now);
+            osc1.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+
+            osc2.type = "sine";
+            osc2.frequency.setValueAtTime(120, now);
+            osc2.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+
+            osc3.type = "sawtooth";
+            osc3.frequency.setValueAtTime(80, now);
+
+            gain.gain.setValueAtTime(0.5, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            osc3.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc1.start(now);
+            osc2.start(now);
+            osc3.start(now);
+            osc1.stop(now + 0.5);
+            osc2.stop(now + 0.5);
+            osc3.stop(now + 0.5);
+        }
+
+        function extractVideoId(input) {
+            const patterns = [
+                /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+                /^([a-zA-Z0-9_-]{11})$/
+            ];
+            for (const pattern of patterns) {
+                const match = input.match(pattern);
+                if (match) return match[1];
+            }
+            return null;
+        }
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                drumGain = audioContext.createGain();
+                drumGain.connect(audioContext.destination);
+                drumGain.gain.value = 0.8;
+            }
+            if (audioContext.state === "suspended") {
+                audioContext.resume();
+            }
+        }
+
+        function playDrumSound(soundType) {
+            initAudio();
+            const ctx = audioContext;
+            const now = ctx.currentTime;
+            const volume = drumVolumeSlider.value / 100;
+
+            const sounds = {
+                kick: () => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+                    gain.gain.setValueAtTime(volume, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                    osc.connect(gain);
+                    gain.connect(drumGain);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                },
+                snare: () => {
+                    const noise = ctx.createBufferSource();
+                    const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.2, ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < buffer.length; i++) data[i] = Math.random() * 2 - 1;
+                    noise.buffer = buffer;
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = "highpass";
+                    filter.frequency.value = 1000;
+                    const gain = ctx.createGain();
+                    gain.gain.setValueAtTime(volume * 0.8, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(drumGain);
+                    noise.start(now);
+                },
+                hihatc: () => {
+                    const noise = ctx.createBufferSource();
+                    const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.05, ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < buffer.length; i++) data[i] = Math.random() * 2 - 1;
+                    noise.buffer = buffer;
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = "highpass";
+                    filter.frequency.value = 7000;
+                    const gain = ctx.createGain();
+                    gain.gain.setValueAtTime(volume * 0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(drumGain);
+                    noise.start(now);
+                },
+                hihato: () => {
+                    const noise = ctx.createBufferSource();
+                    const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.3, ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < buffer.length; i++) data[i] = Math.random() * 2 - 1;
+                    noise.buffer = buffer;
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = "highpass";
+                    filter.frequency.value = 5000;
+                    const gain = ctx.createGain();
+                    gain.gain.setValueAtTime(volume * 0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(drumGain);
+                    noise.start(now);
+                },
+                clap: () => {
+                    for (let i = 0; i < 3; i++) {
+                        const noise = ctx.createBufferSource();
+                        const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.1, ctx.sampleRate);
+                        const data = buffer.getChannelData(0);
+                        for (let j = 0; j < buffer.length; j++) data[j] = Math.random() * 2 - 1;
+                        noise.buffer = buffer;
+                        const filter = ctx.createBiquadFilter();
+                        filter.type = "bandpass";
+                        filter.frequency.value = 1500;
+                        const gain = ctx.createGain();
+                        gain.gain.setValueAtTime(volume * (i === 2 ? 1 : 0.5), now + i * 0.01);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1 + i * 0.01);
+                        noise.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(drumGain);
+                        noise.start(now + i * 0.01);
+                    }
+                },
+                rim: () => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = "square";
+                    osc.frequency.setValueAtTime(800, now);
+                    gain.gain.setValueAtTime(volume * 0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.connect(gain);
+                    gain.connect(drumGain);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                },
+                toml: () => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(100, now);
+                    osc.frequency.exponentialRampToValueAtTime(60, now + 0.2);
+                    gain.gain.setValueAtTime(volume * 0.8, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    osc.connect(gain);
+                    gain.connect(drumGain);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                },
+                tomh: () => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.exponentialRampToValueAtTime(80, now + 0.15);
+                    gain.gain.setValueAtTime(volume * 0.8, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                    osc.connect(gain);
+                    gain.connect(drumGain);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                },
+                crash: () => {
+                    const noise = ctx.createBufferSource();
+                    const buffer = ctx.createBuffer(1, ctx.sampleRate * 1, ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < buffer.length; i++) data[i] = Math.random() * 2 - 1;
+                    noise.buffer = buffer;
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = "highpass";
+                    filter.frequency.value = 4000;
+                    const gain = ctx.createGain();
+                    gain.gain.setValueAtTime(volume * 0.6, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 1);
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(drumGain);
+                    noise.start(now);
+                },
+                ride: () => {
+                    const noise = ctx.createBufferSource();
+                    const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < buffer.length; i++) data[i] = Math.random() * 2 - 1;
+                    noise.buffer = buffer;
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = "highpass";
+                    filter.frequency.value = 5000;
+                    const gain = ctx.createGain();
+                    gain.gain.setValueAtTime(volume * 0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(drumGain);
+                    noise.start(now);
+                },
+                kick808: () => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(80, now);
+                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+                    gain.gain.setValueAtTime(volume, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                    osc.connect(gain);
+                    gain.connect(drumGain);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                },
+                snare808: () => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(200, now);
+                    gain.gain.setValueAtTime(volume * 0.7, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                    osc.connect(gain);
+                    gain.connect(drumGain);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                },
+                perc1: () => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = "square";
+                    osc.frequency.setValueAtTime(600, now);
+                    gain.gain.setValueAtTime(volume * 0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                    osc.connect(gain);
+                    gain.connect(drumGain);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                },
+                perc2: () => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(200, now + 0.08);
+                    gain.gain.setValueAtTime(volume * 0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                    osc.connect(gain);
+                    gain.connect(drumGain);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                },
+                fx: () => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.linearRampToValueAtTime(800, now + 0.1);
+                    osc.frequency.linearRampToValueAtTime(200, now + 0.2);
+                    gain.gain.setValueAtTime(volume * 0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    osc.connect(gain);
+                    gain.connect(drumGain);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                },
+                sub: () => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(50, now);
+                    gain.gain.setValueAtTime(volume * 0.9, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                    osc.connect(gain);
+                    gain.connect(drumGain);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                }
+            };
+
+            if (sounds[soundType]) {
+                sounds[soundType]();
+            }
+        }
+
+        trackBtns.forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const trackKey = btn.dataset.track;
+                const videoId = btn.dataset.video;
+                loadVideo(videoId, true);
+                setActiveTrackButton(trackKey);
+                const trackName = tracks[trackKey]?.name || "Custom track";
+                updateStatus("Now playing: " + trackName);
+            });
+        });
+
+        playCustomBtn.addEventListener("click", () => {
+            const input = customInput.value.trim();
+            if (!input) {
+                updateStatus("Enter a YouTube URL!");
+                return;
+            }
+
+            const videoId = extractVideoId(input);
+            if (videoId) {
+                currentVideoId = videoId;
+                loadVideo(videoId, true);
+                trackBtns.forEach(btn => btn.classList.remove('is-active'));
+                updateStatus("Now playing: Custom YouTube video");
+            } else {
+                updateStatus("Invalid URL. Try a YouTube link!");
+            }
+        });
+
+        customInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") playCustomBtn.click();
+        });
+
+        djToggleBtn.addEventListener("click", togglePlay);
+        stopBtn.addEventListener("click", stopMusic);
+        dropBtn.addEventListener("click", bassDrop);
+
+        musicVolumeSlider.addEventListener("input", (e) => {
+            if (player && player.setVolume) {
+                player.setVolume(e.target.value);
+            }
+        });
+
+        drumVolumeSlider.addEventListener("input", (e) => {
+            if (drumGain) {
+                drumGain.gain.value = e.target.value / 100;
+            }
+        });
+
+        drumPads.forEach(pad => {
+            pad.addEventListener("mousedown", () => {
+                const sound = pad.dataset.sound;
+                playDrumSound(sound);
+                pad.classList.add("active");
+                setTimeout(() => pad.classList.remove("active"), 100);
+            });
+
+            pad.addEventListener("touchstart", (e) => {
+                e.preventDefault();
+                const sound = pad.dataset.sound;
+                playDrumSound(sound);
+                pad.classList.add("active");
+                setTimeout(() => pad.classList.remove("active"), 100);
+            });
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.target.matches('input')) return;
+
+            const keyMap = {
+                '1': 'kick', '2': 'snare', '3': 'hihatc', '4': 'hihato',
+                'q': 'clap', 'w': 'rim', 'e': 'toml', 'r': 'tomh',
+                'a': 'crash', 's': 'ride', 'd': 'kick808', 'f': 'snare808',
+                'z': 'perc1', 'x': 'perc2', 'c': 'fx', 'v': 'sub'
+            };
+
+            if (keyMap[e.key.toLowerCase()]) {
+                const pad = document.querySelector(`.drum-pad[data-sound="${keyMap[e.key.toLowerCase()]}"]`);
+                if (pad) {
+                    playDrumSound(keyMap[e.key.toLowerCase()]);
+                    pad.classList.add('active');
+                    setTimeout(() => pad.classList.remove('active'), 100);
+                }
+            }
+
+            if (e.code === 'Space') {
+                e.preventDefault();
+                togglePlay();
+            }
+            if (e.key === 'Escape') {
+                stopMusic();
+            }
+        });
+    </script>
+</body>
+</html>

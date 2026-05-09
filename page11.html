@@ -14,7 +14,6 @@
             overflow-x: hidden;
         }
 
-        /* ── Starfield canvas sits fixed behind everything ── */
         #starfield {
             position: fixed;
             inset: 0;
@@ -22,13 +21,11 @@
             pointer-events: none;
         }
 
-        /* ── All page content sits above the starfield ── */
         .content-layer {
             position: relative;
             z-index: 1;
         }
 
-        /* ── Scroll sections ── */
         .scroll-section {
             min-height: 100vh;
             display: flex;
@@ -37,7 +34,6 @@
             padding: 40px 20px;
         }
 
-        /* ── Cards ── */
         .message-card {
             width: 540px;
             max-width: 100%;
@@ -60,7 +56,6 @@
             transform: translateY(0);
         }
 
-        /* ── Page label ── */
         .page-label {
             font-size: 0.8rem;
             letter-spacing: 3px;
@@ -70,7 +65,6 @@
             margin-bottom: 18px;
         }
 
-        /* ── Headings ── */
         .message-card h1 {
             font-size: 1.95rem;
             color: #b76cff;
@@ -79,7 +73,6 @@
             margin-bottom: 12px;
         }
 
-        /* ── Body text ── */
         .message-card p {
             font-size: 1.05rem;
             color: #d9b8ff;
@@ -89,7 +82,6 @@
 
         .message-card p b { color: #c97bff; }
 
-        /* ── Scroll hint ── */
         .scroll-hint {
             margin-top: 26px;
             display: flex;
@@ -109,7 +101,6 @@
             50%       { transform: translateY(9px); }
         }
 
-        /* ── Game card ── */
         .game-card {
             width: 600px;
         }
@@ -127,7 +118,6 @@
             image-rendering: crisp-edges;
         }
 
-        /* ── Quote section ── */
         .quote-card {
             width: 500px;
         }
@@ -144,7 +134,6 @@
             filter: drop-shadow(0 0 16px #9b3fff66);
         }
 
-        /* ── Constellation card ── */
         #constellationCanvas {
             display: block;
             width: 100%;
@@ -156,7 +145,6 @@
             touch-action: none;
         }
 
-        /* ── Back arrow ── */
         .back-arrow {
             position: fixed;
             bottom: 28px;
@@ -180,7 +168,6 @@
             box-shadow: 0 0 24px rgba(180, 100, 255, 0.7);
         }
 
-        /* ── Neon divider ── */
         .neon-line {
             width: 60px;
             height: 3px;
@@ -190,7 +177,6 @@
             box-shadow: 0 0 14px #9b3fff88;
         }
 
-        /* ── Emoji float anim ── */
         @keyframes float {
             0%, 100% { transform: translateY(0) rotate(-4deg); }
             50%       { transform: translateY(-10px) rotate(4deg); }
@@ -201,7 +187,6 @@
             font-style: normal;
         }
 
-        /* ── Pulse ring anim (around score on game) ── */
         @keyframes pulseRing {
             0%   { box-shadow: 0 0 0 0 #b76cff88; }
             70%  { box-shadow: 0 0 0 12px #b76cff00; }
@@ -216,7 +201,7 @@
 
 <div class="content-layer">
 
-    <!-- ── Section 1 ── -->
+    <!-- Section 1 -->
     <div class="scroll-section">
         <div class="message-card" data-reveal>
             <p class="page-label">Page 11</p>
@@ -230,7 +215,7 @@
         </div>
     </div>
 
-    <!-- ── Section 2 ── -->
+    <!-- Section 2 -->
     <div class="scroll-section">
         <div class="message-card" data-reveal>
             <h1>honestly at this point<br>we're basically besties <span class="emoji-float">🌌</span></h1>
@@ -239,7 +224,7 @@
         </div>
     </div>
 
-    <!-- ── Section 3 — Big quote ── -->
+    <!-- Section 3 -->
     <div class="scroll-section">
         <div class="message-card quote-card" data-reveal>
             <p class="big-quote">"keep going<br>even when<br>it's hard"</p>
@@ -249,7 +234,7 @@
         </div>
     </div>
 
-    <!-- ── Section 4 — Constellation maker ── -->
+    <!-- Section 4 -->
     <div class="scroll-section">
         <div class="message-card game-card" data-reveal>
             <h1>make ur own constellation ✨</h1>
@@ -261,7 +246,7 @@
         </div>
     </div>
 
-    <!-- ── Section 5 — Comet catch game ── -->
+    <!-- Section 5 -->
     <div class="scroll-section">
         <div class="message-card game-card" data-reveal>
             <h1>catch the comet 🌠</h1>
@@ -273,7 +258,7 @@
         </div>
     </div>
 
-    <!-- ── Section 6 — Outro ── -->
+    <!-- Section 6 -->
     <div class="scroll-section">
         <div class="message-card" data-reveal>
             <h1>ok that's actually it now 😭</h1>
@@ -289,23 +274,17 @@
         </div>
     </div>
 
-</div><!-- /content-layer -->
+</div>
 
 <a href="page10.html" class="back-arrow" title="Previous Page">&#8249;</a>
 <a href="page12.html" class="back-arrow" style="left:auto; right:28px; background:linear-gradient(135deg,#1a0800,#ff8c22); border-color:#ffb347; color:#ffd700;" title="Next Page">&#8250;</a>
 
 <script>
-/* ════════════════════════════════════════════
-   SCROLL REVEAL
-════════════════════════════════════════════ */
 const revealObs = new IntersectionObserver(entries => {
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.2 });
 document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
 
-/* ════════════════════════════════════════════
-   ANIMATED STARFIELD BACKGROUND
-════════════════════════════════════════════ */
 (function () {
     const sf  = document.getElementById('starfield');
     const sfc = sf.getContext('2d');
@@ -323,7 +302,7 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
             x    : Math.random() * W,
             y    : Math.random() * H,
             r    : Math.random() * 1.4 + 0.2,
-            a    : Math.random(),          // base alpha
+            a    : Math.random(),
             da   : (Math.random() * 0.012 + 0.003) * (Math.random() < 0.5 ? 1 : -1),
             speed: Math.random() * 0.08 + 0.01
         };
@@ -334,7 +313,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
         for (let i = 0; i < STAR_COUNT; i++) stars.push(makeStar());
     }
 
-    // Shooting stars
     const shoots = [];
     function spawnShoot() {
         shoots.push({
@@ -351,7 +329,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
     function tickSF() {
         sfc.clearRect(0, 0, W, H);
 
-        // Nebula blobs
         const nebs = [
             { x: W*0.2, y: H*0.3, r: 160, c: 'rgba(100,30,200,0.06)' },
             { x: W*0.75,y: H*0.6, r: 200, c: 'rgba(0,180,200,0.05)' },
@@ -367,7 +344,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
             sfc.fill();
         });
 
-        // Regular stars
         for (const s of stars) {
             s.a  += s.da;
             if (s.a > 1 || s.a < 0.05) s.da *= -1;
@@ -381,7 +357,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
             sfc.fill();
         }
 
-        // Shooting stars
         for (let i = shoots.length - 1; i >= 0; i--) {
             const s = shoots[i];
             s.x    += s.vx;
@@ -417,9 +392,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
     requestAnimationFrame(tickSF);
 })();
 
-/* ════════════════════════════════════════════
-   CONSTELLATION MAKER
-════════════════════════════════════════════ */
 (function () {
     const cv  = document.getElementById('constellationCanvas');
     const ctx = cv.getContext('2d');
@@ -429,7 +401,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
     const LINE_COL  = '#7b2fff';
     const CYAN_COL  = '#5bf0e8';
 
-    // Some pre-placed background faint stars
     const bgStars = Array.from({ length: 60 }, () => ({
         x: Math.random() * CW,
         y: Math.random() * CH,
@@ -437,17 +408,13 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
         a: Math.random() * 0.4 + 0.1
     }));
 
-    // User-placed stars
     const userStars = [];
 
     function draw() {
         ctx.clearRect(0, 0, CW, CH);
-
-        // Dark bg
         ctx.fillStyle = '#03010d';
         ctx.fillRect(0, 0, CW, CH);
 
-        // Background stars
         for (const s of bgStars) {
             ctx.globalAlpha = s.a;
             ctx.fillStyle   = '#ffffff';
@@ -457,7 +424,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
         }
         ctx.globalAlpha = 1;
 
-        // Lines between nearby user stars
         ctx.lineWidth   = 1;
         for (let i = 0; i < userStars.length; i++) {
             for (let j = i + 1; j < userStars.length; j++) {
@@ -480,9 +446,7 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
         ctx.globalAlpha = 1;
         ctx.shadowBlur  = 0;
 
-        // User stars
         for (const s of userStars) {
-            // glow
             ctx.shadowColor = STAR_COL;
             ctx.shadowBlur  = 18;
             ctx.fillStyle   = STAR_COL;
@@ -490,7 +454,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
             ctx.arc(s.x, s.y, 4, 0, Math.PI * 2);
             ctx.fill();
 
-            // Spike cross
             ctx.strokeStyle = '#ffffff';
             ctx.shadowBlur  = 8;
             ctx.lineWidth   = 1;
@@ -501,7 +464,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
             ctx.shadowBlur = 0;
         }
 
-        // HUD
         ctx.fillStyle   = '#c97bff';
         ctx.shadowColor = '#c97bff';
         ctx.shadowBlur  = 5;
@@ -532,7 +494,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
     function addStar(e) {
         e.preventDefault();
         const p = getPos(e);
-        // Limit to 40 stars
         if (userStars.length >= 40) userStars.shift();
         userStars.push({ x: p.x, y: p.y });
         draw();
@@ -544,9 +505,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
     draw();
 })();
 
-/* ════════════════════════════════════════════
-   CATCH THE COMET — MINI GAME
-════════════════════════════════════════════ */
 (function () {
     const cv  = document.getElementById('cometCanvas');
     const ctx = cv.getContext('2d');
@@ -565,10 +523,8 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
     let rafId;
     let baseSpeed = 3.2;
 
-    /* ── Comet spawn ── */
     function spawnComet() {
-        // Start from a random edge
-        const side = Math.floor(Math.random() * 4); // 0=top 1=right 2=bottom 3=left
+        const side = Math.floor(Math.random() * 4);
         let x, y, vx, vy;
         const spd = baseSpeed + score * 0.12;
         const angle = Math.random() * Math.PI * 0.5 + Math.PI * 0.2;
@@ -583,11 +539,10 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
         vx = vx / mag * spd;
         vy = vy / mag * spd;
 
-        const life = 200 - score * 2.5;  // frames alive
+        const life = 200 - score * 2.5;
         comet = { x, y, vx, vy, life, maxLife: Math.max(life, 60), r: 9 + Math.random()*5 };
     }
 
-    /* ── Burst ── */
     function spawnBurst(x, y, col) {
         for (let i = 0; i < 18; i++) {
             const a = Math.random() * Math.PI * 2;
@@ -596,7 +551,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
         }
     }
 
-    /* ── Start ── */
     function startGame() {
         score   = 0;
         misses  = 0;
@@ -608,13 +562,10 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
         rafId = requestAnimationFrame(tick);
     }
 
-    /* ── Tick ── */
     function tick() {
-        // Background
         ctx.fillStyle = '#03010d';
         ctx.fillRect(0, 0, CW, CH);
 
-        // Grid
         ctx.strokeStyle = '#150030';
         ctx.lineWidth   = 1;
         for (let x = 0; x < CW; x += 36) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,CH); ctx.stroke(); }
@@ -622,13 +573,11 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
 
         if (!running) { rafId = requestAnimationFrame(tick); return; }
 
-        // Move comet
         if (comet) {
             comet.x    += comet.vx;
             comet.y    += comet.vy;
             comet.life -= 1;
 
-            // Draw tail
             const tailLen = 28 + score;
             for (let i = 1; i <= 6; i++) {
                 const t   = i / 6;
@@ -644,11 +593,9 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
             }
             ctx.globalAlpha = 1;
 
-            // Urgency colour based on remaining life
             const lifeFrac = comet.life / comet.maxLife;
             const col = lifeFrac > 0.4 ? PURPLE : (lifeFrac > 0.2 ? '#ffaa00' : RED);
 
-            // Draw comet body
             ctx.shadowColor = col;
             ctx.shadowBlur  = 24;
             ctx.fillStyle   = col;
@@ -661,7 +608,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
             ctx.stroke();
             ctx.shadowBlur  = 0;
 
-            // Timer ring
             const pct = comet.life / comet.maxLife;
             ctx.strokeStyle = col;
             ctx.lineWidth   = 2.5;
@@ -672,7 +618,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
             ctx.stroke();
             ctx.shadowBlur = 0;
 
-            // Out of time
             if (comet.life <= 0 || comet.x < -60 || comet.x > CW+60 || comet.y < -60 || comet.y > CH+60) {
                 misses++;
                 comet = null;
@@ -684,7 +629,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
             }
         }
 
-        // Burst particles
         for (let i = burst.length - 1; i >= 0; i--) {
             const p = burst[i];
             p.x += p.vx; p.y += p.vy;
@@ -702,7 +646,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
         ctx.globalAlpha = 1;
         ctx.shadowBlur  = 0;
 
-        // HUD
         ctx.shadowColor = PURPLE;
         ctx.shadowBlur  = 6;
         ctx.fillStyle   = PURPLE;
@@ -710,7 +653,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
         ctx.textAlign   = 'left';
         ctx.fillText('score: ' + score, 8, 18);
 
-        // Miss hearts
         ctx.textAlign = 'right';
         ctx.font = '15px system-ui';
         const hearts = ['💜','💜','💜'];
@@ -720,26 +662,22 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
         }
         ctx.shadowBlur = 0;
 
-        // Game over
         if (!running && burst.length === 0) {
             ctx.textAlign   = 'center';
             ctx.font        = 'bold italic 22px system-ui';
             ctx.fillStyle   = PINK;
             ctx.shadowColor = PINK;
             ctx.shadowBlur  = 18;
-            ctx.fillText('💔  game over — tap to retry', CW/2, CH/2 - 4);
+            ctx.fillText('game over — tap to retry', CW/2, CH/2 - 4);
             ctx.font        = 'italic 13px system-ui';
             ctx.fillStyle   = '#d9b8ff';
             ctx.shadowBlur  = 0;
             ctx.fillText('score: ' + score, CW/2, CH/2 + 17);
-        } else if (!running) {
-            // Still animating burst
         }
 
         rafId = requestAnimationFrame(tick);
     }
 
-    /* ── Click / tap ── */
     function getPos(e) {
         const rect  = cv.getBoundingClientRect();
         const scaleX = CW / rect.width;
@@ -757,7 +695,7 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
         const p   = getPos(e);
         const dx  = p.x - comet.x;
         const dy  = p.y - comet.y;
-        const hit = Math.hypot(dx, dy) <= comet.r + 14;  // generous radius
+        const hit = Math.hypot(dx, dy) <= comet.r + 14;
         if (hit) {
             score++;
             spawnBurst(comet.x, comet.y, CYAN);
@@ -769,7 +707,6 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
     cv.addEventListener('mousedown',  handleClick);
     cv.addEventListener('touchstart', handleClick, { passive: false });
 
-    /* ── Initial idle draw ── */
     (function idleDraw() {
         ctx.fillStyle = '#03010d';
         ctx.fillRect(0, 0, CW, CH);
@@ -782,7 +719,7 @@ document.querySelectorAll('[data-reveal]').forEach(el => revealObs.observe(el));
         ctx.fillStyle   = PURPLE;
         ctx.shadowColor = PURPLE;
         ctx.shadowBlur  = 16;
-        ctx.fillText('tap to start 🌠', CW/2, CH/2);
+        ctx.fillText('tap to start', CW/2, CH/2);
         ctx.shadowBlur  = 0;
     })();
 })();
